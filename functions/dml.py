@@ -62,13 +62,8 @@ def xgb_classifcation(X_train, X_test, y_train, y_test):
         max_depth=best_params['xgb_max_depth'],
         min_child_weight=best_params['xgb_min_child_weight'],
     )
-<<<<<<< HEAD
   #print("best_params")
   #print(best_params)
-=======
-  print("best_params")
-  print(best_params)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
    
   return xgb_class_model
  
@@ -102,13 +97,8 @@ def xgb_regressor(X_train, X_test, y_train, y_test):
                              max_depth=best_params['xgb_max_depth'],
                              min_child_weight=best_params['xgb_min_child_weight']
                              )
-<<<<<<< HEAD
     #print("best_params")
     #print(best_params)
-=======
-    print("best_params")
-    print(best_params)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
    
 
     return xgb_model
@@ -235,11 +225,7 @@ def optimize_and_update_models_parallel_continuous(X_train, X_test, y_train, y_t
 
 
     # Train the final models with the best parameters
-<<<<<<< HEAD
     lasso_model = LassoCV(alphas=[best_params['lasso_alpha']],max_iter=1000000,tol = 1e-2, cv=5, n_jobs=-1,verbose=False,random_state=42)
-=======
-    lasso_model = LassoCV(alphas=[best_params['lasso_alpha']],max_iter=100000, cv=5, n_jobs=-1,verbose=False,random_state=42)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
 
     xgb_model = XGBRegressor(n_jobs=-1,random_state=42,
                              learning_rate=best_params['xgb_learning_rate'],
@@ -260,7 +246,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
   optuna.logging.set_verbosity(optuna.logging.WARNING)
   print("treatments: ", treatments)
   print("n_treatments: ",n_treatments)
-<<<<<<< HEAD
   date_columns = data.select_dtypes(include='datetime64').columns 
   print("date columns :",date_columns)
   timestamp_columns = data.select_dtypes(include='datetime64[ns, UTC]').columns 
@@ -282,9 +267,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     data = pd.concat([data.drop(columns=[col]), treatment_dummies], axis=1)
   
   #data = pd.get_dummies(data,sparse=True)
-=======
-  data = pd.get_dummies(data,sparse=True)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
   data = data.apply(lambda col: pd.to_numeric(col, errors='coerce')).astype(float)
   np.random.seed(123)
   X = pd.DataFrame(data.drop([outcome],axis=1), columns=data.drop([outcome],axis=1).columns)
@@ -342,13 +324,8 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     n = len(treatments)
     treatments = treatments
    
-<<<<<<< HEAD
   binary_columns = [col for col in X.columns if set(data[col].unique()) == {0.0, 1.0}] 
   binary_treatments = [value for value in binary_columns if value in treatments] + string_treatments_dummies
-=======
-  binary_columns = [col for col in X.columns if set(data[col].unique()) == {0.0, 1.0}]
-  binary_treatments = [value for value in binary_columns if value in treatments]
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
   print("binarytreatments: ",binary_treatments)
   continuous_treatments = [col for col in X.columns if len(X[col].unique()) > 2 and col in treatments]
   print("continuous_treatments: ",continuous_treatments)
@@ -364,10 +341,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       ml_g = xgb_regressor(X_train, X_test, y_train, y_test)
     test_list = []
     for col in binary_treatments:
-<<<<<<< HEAD
-=======
-      print('col :',col)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
       obj_dml_data = dml.DoubleMLData(data, outcome, col) 
       np.random.seed(123)
       dml_irm_obj = dml.DoubleMLIRM(obj_dml_data, ml_g, XGBClassifier(n_jobs=-1,random_state=42))  
@@ -378,10 +351,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
    
     classifier_plr_summary =  pd.concat(test_list, ignore_index=True)
     classifier_plr_summary['method'] = 'xgb_classifier'
-<<<<<<< HEAD
     
-=======
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
    
   if continuous_treatments:
     if outcome_is_binary:
@@ -483,11 +453,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       np.random.seed(123)
       dml_plr_lasso = dml.DoubleMLPLR(data_dml_base,
                                 ml_l = lasso_reg,
-<<<<<<< HEAD
                                 ml_m = LassoCV(n_jobs=-1,cv=5, max_iter=1000000,tol = 1e-2,verbose=False,random_state=42),
-=======
-                                ml_m = LassoCV(n_jobs=-1,cv=5, max_iter=100000,verbose=False,random_state=42),
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
                                 n_folds = 3)
                                 
       dml_plr_lasso.fit(store_predictions=True)
@@ -499,11 +465,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       plr_summary['method'] = m
       plr_summary['type'] = 'continuous'
       plr_summary = plr_summary.reset_index().rename(columns={"index": "treatment"})
-<<<<<<< HEAD
-=======
-      print("plr_summary")
-      print(plr_summary)
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
       # Calculate the mean coefficient across methods for each treatment
       plr_summary['ATE']= None
       #plr_summary['ATE'] = plr_summary.groupby('treatment').apply(lambda group: group['coef'].mean() if (group['P>|t|'] <= .05).all() else None).reset_index(drop=True)
@@ -521,11 +482,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     winow_agg = window_agg.groupby('treatment')['coef'].mean()
     final_plr_summary['ATE'] = final_plr_summary['treatment'].map(winow_agg)
     final_plr_summary['ATE'] = np.where(final_plr_summary['Significant'],final_plr_summary['ATE'],np.nan)
-<<<<<<< HEAD
-=======
-    
-    
->>>>>>> 7cb5fa1f79ac18c316ece23f808f7906504c4897
     significant_treatments = final_plr_summary[['treatment','Significant', 'ATE']].drop_duplicates()
     empty = False
   elif binary_treatments and not continuous_treatments:
