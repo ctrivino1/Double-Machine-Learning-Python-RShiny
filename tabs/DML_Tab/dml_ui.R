@@ -21,7 +21,7 @@ hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
 
 dml_outcome <- tabPanel(
   "Causation", 
-  fluidPage(useShinyjs(), css_body,fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'mc_rate', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionBttn("dml", "Calculate", style = "fill", color = "success"))),tags$hr(), fluidRow(column(4,dataTableOutput("ATE")), column(4,dataTableOutput("plr")), hidden_buttons
+  fluidPage(useShinyjs(), css_body,fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionBttn("dml", "Calculate", style = "fill", color = "success"))),tags$hr(), fluidRow(column(4,dataTableOutput("ATE")), column(4,dataTableOutput("plr")), hidden_buttons
             
             )))
             
