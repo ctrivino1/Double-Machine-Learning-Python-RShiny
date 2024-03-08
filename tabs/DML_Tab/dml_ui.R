@@ -19,9 +19,10 @@ hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
 
 ### for powerpoint 
 ppt <-  tags$iframe(
-  src = "https://docs.google.com/presentation/d/e/2PACX-1vQLNvTbl2icrWS8nYTRswhfn8-sqJBUlLbsxlovPVkh6xp6KFDLmx3Z6BmcfofCcQ/embed?start=true&loop=true&delayms=60000",
-  frameborder = 1, width = 500, height = 500,
-  allowfullscreen = TRUE, mozallowfullscreen = TRUE, webkitallowfullscreen = TRUE,collapsible = T
+  id = "pptIframe",
+  src = "https://docs.google.com/presentation/d/e/2PACX-1vQLNvTbl2icrWS8nYTRswhfn8-sqJBUlLbsxlovPVkh6xp6KFDLmx3Z6BmcfofCcQ/embed?start=true&loop=true&delayms=60000",  # Reference to local PowerPoint file
+  frameborder = 0, width = 800, height = 600,
+  allowfullscreen = TRUE, mozallowfullscreen = TRUE, webkitallowfullscreen = TRUE
 )
 
 

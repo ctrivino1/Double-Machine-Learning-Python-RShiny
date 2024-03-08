@@ -1,7 +1,7 @@
 
 logger::log_info('running global.R')
 library(plyr)
-#library(hdm)
+library(hdm)
 library(glue)
 library(reactable)
 library(shinyglide)
@@ -25,6 +25,7 @@ library(padr)
 library(shinybusy)
 library(shinyFeedback)
 library(reticulate)
+library(rsconnect)
 
 
 logger::log_info('packages loaded')
