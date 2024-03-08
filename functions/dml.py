@@ -9,7 +9,6 @@ import pandas as pd
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from xgboost import XGBRegressor
-import matplotlib.pyplot as plt
 import sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
@@ -27,8 +26,7 @@ from sklearn.pipeline import make_pipeline
 
 from xgboost import XGBClassifier, XGBRegressor
 
-import matplotlib.pyplot as plt
-import seaborn as sns
+
 import optuna
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
@@ -255,10 +253,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
   # Drop identified columns
   data = data.drop(columns=columns_to_drop)
   og_cols = data.columns
-  # (get rid of this in production: #########################
-  ###drop time columns (specific for this example) #######
-  data = data.drop(['dt_mo_cd','dt_time'],axis=1)
-  ############################################################
+ 
   string_treatments = [col for col in data.columns if data[col].dtype == 'O' and col in treatments]
   string_treatments_dummies = []
   for col in string_treatments:

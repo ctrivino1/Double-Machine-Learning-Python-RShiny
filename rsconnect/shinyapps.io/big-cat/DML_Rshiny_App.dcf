@@ -1,0 +1,13 @@
+name: DML_Rshiny_App
+title: DML_Rshiny_App
+username: big-cat
+account: big-cat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11437250
+bundleId: 8347988
+url: https://big-cat.shinyapps.io/DML_Rshiny_App/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: README.md

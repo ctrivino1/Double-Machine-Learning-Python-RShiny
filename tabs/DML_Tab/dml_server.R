@@ -1,7 +1,7 @@
 source("./global.r")
-## turn on python virtual enviornment
-#virtualenv_create('r-reticulate')
-#use_virtualenv('r-reticulate')
+
+
+
 ## use the virtual environment to allow python script functions to be used (note: must use source_python)
 source_python("./functions/dml.py")
 
