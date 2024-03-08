@@ -22,6 +22,7 @@ hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
 ppt <-  tags$iframe(
   id = "slidesIframe",
   src = "https://docs.google.com/presentation/d/e/2PACX-1vQLNvTbl2icrWS8nYTRswhfn8-sqJBUlLbsxlovPVkh6xp6KFDLmx3Z6BmcfofCcQ/embed?start=true&loop=true&delayms=60000",
+ #src = './www/dml_ppt_rshiny.pptx', ### figure this out
   frameborder = 1, width = "100%", height = 600,
   allowfullscreen = TRUE, mozallowfullscreen = TRUE, webkitallowfullscreen = TRUE
 )
