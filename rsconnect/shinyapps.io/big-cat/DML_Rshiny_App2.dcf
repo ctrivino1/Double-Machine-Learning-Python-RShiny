@@ -5,7 +5,7 @@ account: big-cat
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 11437314
-bundleId: 8348030
+bundleId: 8348216
 url: https://big-cat.shinyapps.io/DML_Rshiny_App2/
 version: 1
 asMultiple: FALSE
