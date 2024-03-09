@@ -112,7 +112,7 @@ render_dml_tab <-
     
     
     
-    
+    ## call back for output DT's this allows for tooltips and other custom filters to be applied on click, double click and hover
     callback2 <- c("
                 /* code for columns on hover */
                  table.on('mouseenter', 'td', function() {
