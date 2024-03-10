@@ -6,52 +6,47 @@ source("./global.r")
 source_python("./functions/dml.py")
 
 
-
+### dml function
 render_dml_tab <- 
   function(input, output,session) {
     output$value <- renderText({input$n_treats})
     observeEvent(input$dml, {
       print("button clicked")
-      show_modal_progress_line()
+      show_modal_spinner(
+        spin = "cube-grid",
+        color = "firebrick",
+        text = "Please wait..."
+      )
       if (is.null(input$treatments) && !is.na(input$n_treats)){
         print("n_treatments")
         print(input$n_treats)
         py_dat <- r_to_py(global_dat)
-        update_modal_progress(.2)
-        Sys.sleep(1)
+        
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
-        update_modal_progress(.6)
-        Sys.sleep(1)
+        
         if (py_result[[3]]){
-          update_modal_progress(1)
-          remove_modal_progress()
-          Sys.sleep(1)
+          remove_modal_spinner()
           showNotification("No significant Treatment Values found",type='warning',duration=NULL)
         } else {
-          update_modal_progress(.8)
-          Sys.sleep(1)
+          
+          
           filter1 <- subset(py_result[[1]], Significant != 'FALSE')
           global$ATE_summary  <-subset(filter1, ATE != 'NULL')
           global$plr_summary <- py_result[[2]]
           update_modal_progress(1)
-          remove_modal_progress()
-          Sys.sleep(1)
+          remove_modal_spinner()
+          
           
         }
       }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
         #print("treatment list given")
         #print(input$treatments)
         py_dat <- r_to_py(global_dat)
-        update_modal_progress(.2)
-        Sys.sleep(1)
         py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
-        update_modal_progress(.6)
-        Sys.sleep(1)
+        
         if (py_result[[3]]){
-          update_modal_progress(1)
-          remove_modal_progress()
-          Sys.sleep(1)
+          remove_modal_spinner()
           showNotification("No significant Treatment Values found",type='warning')
         } else {
           filter1 <- subset(py_result[[1]], Significant != 'FALSE')
@@ -60,17 +55,16 @@ render_dml_tab <-
           print(global$ATE_summary)
           global$plr_summary <- py_result[[2]]
         }
-        update_modal_progress(1)
-        Sys.sleep(1)
-        remove_modal_progress()
+        remove_modal_spinner()
       } else {
-        remove_modal_progress()
+        remove_modal_spinner()
         showNotification("Please only select treatments, or n_treatments, there should not be values in both")
       }
-      remove_modal_progress()
+      remove_modal_spinner()
       
     })
-    
+    ######### This code clears all global variables if the calculate button is pressed more than once
+    ######### this is to ensure that there are no memory issues.
     ### creating variable for click_count
     click_count <- reactiveVal(0)
     observeEvent(input$dml, {
@@ -97,8 +91,7 @@ render_dml_tab <-
       }
     })
     
-    ### for testing purposes###################################################################################
-    # I have to have a reactive value that changes in the observe function in order for the observe function to be live.
+    ### part 2 of clearing the global variables ( I have to inlcude the global$trigger value in order for the global variables to update)
     observe({
       print(global$trigger)
       # Get the names of all objects in the global environment
@@ -143,6 +136,7 @@ render_dml_tab <-
                    
     )
     
+    ## render the ATE DT
     output$ATE <- renderDT(
       datatable({
         req(is.data.frame(global$ATE_summary))
@@ -167,6 +161,7 @@ render_dml_tab <-
           )),selection = "single") %>% 
         formatStyle(0, cursor = 'pointer')) 
     
+    ## redner the plr data
     output$plr <- renderDT(
       datatable({
         req(is.data.frame(global$plr_summary))
@@ -191,7 +186,7 @@ render_dml_tab <-
           )),selection = "single") %>% 
         formatStyle(0, cursor = 'pointer'))
     #####################################
-    
+    # plotly graph example
     # output$plotlygraph <- renderPlotly({
     #   if (!is.null(global$ATE_summary)) {
     #     graph <- ggplotly(ggplot(global$ATE_summary[order(global$ATE_summary$ATE),], aes(x = treatment, y = ATE, fill = ATE,label = ATE)) +
@@ -215,50 +210,10 @@ render_dml_tab <-
     #   graph
     #   }})
     
-    ### for pension data###################################################
-    # passed_male <- reactive({
-    #   print("passed male working")
-    #   # Extract the 'male' parameter from the URL
-    #   url_params <- strsplit(session$clientData$url_search, "&")[[1]]
-    #   male_param <- grep("male=", url_params, value = TRUE)
-    #   if (length(male_param) > 0) {
-    #     male_value <- gsub("male=", "", male_param)
-    #     male_value <- gsub("^\\?","",male_value)
-    #     male_value <- URLdecode(male_value)
-    #     male_vector <- unlist(strsplit(male_value,","))
-    #     male_vector <<- unique(male_vector)
-    #     distinct_male_value  <- as.list(male_vector)
-    #     global$tableau_filter <- distinct_male_value
-    #     print("tableau filter: ")
-    #     print(global$tableau_filter)
-    #     #distinct_male_value  <- paste(male_vector, collapse = ",")
-    #     return(distinct_male_value)
-    # 
-    #   } else {
-    #     return('No value')
-    #   }
-    # 
-    # })
-    
-    # test_dat <- reactive({
-    #   print("test_dat working")
-    #   if (is.null(global$tableau_filter)){
-    #     print("OG data")} else {
-    #       dat <<- filter(global_dat,male==global$tableau_filter)
-    #       print("filtered gender for: ")
-    #       print(unique(dat$male))
-    #   }})
     
     
     
     
-    #observe(global$test_dat <- test_dat())
-    
-    #observe(global$tableau_filter  <- passed_male())
-    
-    # output$filter <- renderPrint({
-    #   paste("gender filter selected from Tableau: ",global$tableau_filter )
-    # })
     
     
     
