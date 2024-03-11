@@ -55,6 +55,9 @@ css_body <- tags$head(
       color: black;
     }
     
+       hr {
+      border-top: 1px solid #000000;
+    }
          ")
   )
 )
@@ -90,24 +93,23 @@ ppt <-  tags$iframe(
 
 ##### the app body
 dml_outcome <- tabPanel(
-  "Causation",  
+  "Causation",
   fluidPage(shinyjs::useShinyjs(),box_collapse_functionality, css_body,hidden_buttons,
-        shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
+        fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
                               tabBox(id = 'overview_tabBox',
-                                     tabPanel('Overview', p(intro_text)), 
+                                     tabPanel('Overview', p(intro_text)),
                                      tabPanel('Methodology', p(methodology_text))
-                                     ,tags$hr())
-                              
-                              
-                              ),
-        br(),br(),
-        shinydashboardPlus::box( title = 'DML Powerpoint Explanation',collapsible = T,width = 12,ppt,tags$hr()),
+                                     ))),
+        fluidRow(tags$hr(),width=12),
         br(),
-        fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionButton("dml", "Calculate", style = "fill", color = "success"))),tags$hr(), 
+        fluidRow(shinydashboardPlus::box( title = 'DML Powerpoint Explanation',collapsible = T,width = 12,ppt)),
+        fluidRow(tags$hr()),
+        br(),
+        fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionButton("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
         fluidRow(conditionalPanel(
           condition = "input.dml > 0",
           tabBox(id = "ppt_tabBox", title = 'Data Tables', width = 6,
-                 tabPanel('ATE DT', dataTableOutput("ATE")), 
+                 tabPanel('ATE DT', dataTableOutput("ATE")),
                  tabPanel('Model Summary DT', dataTableOutput("plr"))
           )
         ))
