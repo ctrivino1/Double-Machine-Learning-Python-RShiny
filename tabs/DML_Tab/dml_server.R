@@ -210,9 +210,7 @@ render_dml_tab <-
     #   graph
     #   }})
     
-    
-    
-    
+   
     
     
     
