@@ -1,6 +1,7 @@
 source("./global.r")
 # Your specific introduction paragraph text with numbered bullet points
-intro_text <- HTML("
+# tags$p lets me adjust the font size after the html text
+intro_text <- tags$div(HTML("
   <strong>Double Machine Learning (DML)</strong> is a powerful approach in causal analysis, specifically designed to address the limitations of using traditional machine learning methods for estimating causal parameters. Unlike correlation-based methods that may overlook the complexities of causal relationships, DML provides a robust framework for obtaining accurate estimates of individual regression coefficients, average treatment effects, and other essential parameters.<br><br>
 
   <strong>Key Advantages:</strong><br>
@@ -17,9 +18,9 @@ intro_text <- HTML("
   <strong>Implementation Methodology:</strong><br>
 
   Our app follows the methodology outlined in the research paper 'Double/Debiased Machine Learning for Treatment and Causal Parameters' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, James Robins. By adopting the principles and techniques proposed in this paper, our app aims to provide data scientists with a comprehensive and effective tool for mastering double machine learning in causal analysis."
-  )
+), class = 'increase-fontsize-text')
 
-methodology_text <- HTML("
+methodology_text <- tags$div(HTML("
   <strong>Methodology:</strong><br>
   Our approach adapts to the nature of the treatment variable:<br><br>
 
@@ -35,7 +36,7 @@ methodology_text <- HTML("
   
   <strong>DataTable Structure:</strong><br>
   The first Data Table tab 'ATE DT' displays the three-model average ATE score for continuous treatments and the singular ATE score for binary treatments. The 'Significant' column in the first data table flags whether the model has a significant p-value.The second tab 'Model Summary DT' displays a comprehensive data table for each individual model used for computing the ATE for each treatment. This table provides model summary statistics which includes: slopes, p-values, and confidence intervals."
-  )
+), class = 'increase-fontsize-text')
 
 css_body <- tags$head(
   tags$style(
@@ -55,16 +56,36 @@ css_body <- tags$head(
       color: black;
     }
     
-       hr {
-      border-top: 1px solid #000000;
+    /* darker font for break line */
+    hr {
+    border-top: 1px solid #000000;
+       }
+    
+    /* border for iframe */
+    iframe-border {
+    border: 2px solid #000000;
     }
+    
+    /* hide slide header numbersin presentation */
+    .slides > slide > htroup > h1 {
+    display: none;
+    }
+    
+    /* hide slide headers */
+    .increase-fontsize-text {
+    font-size: 20px;
+    }
+    
+
+    
+    
          ")
   )
 )
 
 hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
 
-box_collapse_functionality <- tags$script(HTML(
+JS_body <- tags$script(HTML(
   "
         // JavaScript function to handle box minimization
         $(document).on('click', '.box-header .fa-minus', function() {
@@ -79,45 +100,78 @@ box_collapse_functionality <- tags$script(HTML(
           box.find('.box-body, .box-footer').slideDown();
           box.find('.box-header .fa-plus').removeClass('fa-plus').addClass('fa-minus');
         });
+        
+        // Additional JavaScript code for custom options
+        // Add your custom JavaScript code here
+        
         "))
 
-### for powerpoint 
+### for powerpoint hosted through google slides
 ppt <-  tags$iframe(
   id = "slidesIframe",
   src = "https://docs.google.com/presentation/d/e/2PACX-1vQLNvTbl2icrWS8nYTRswhfn8-sqJBUlLbsxlovPVkh6xp6KFDLmx3Z6BmcfofCcQ/embed?start=true&loop=true&delayms=60000",
- #src = './www/dml_ppt_rshiny.pptx', ### figure this out
   frameborder = 0 , width = "100%", height = 600,
   allowfullscreen = TRUE, mozallowfullscreen = TRUE, webkitallowfullscreen = TRUE
 )
 
 
+
+
+
 ##### the app body
 dml_outcome <- tabPanel(
   "Causation",
-  fluidPage(shinyjs::useShinyjs(),box_collapse_functionality, css_body,hidden_buttons,
-        fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
-                              tabBox(id = 'overview_tabBox',
-                                     tabPanel('Overview', p(intro_text)),
-                                     tabPanel('Methodology', p(methodology_text))
-                                     ))),
-        fluidRow(tags$hr(),width=12),
-        br(),
-        fluidRow(shinydashboardPlus::box( title = 'DML Powerpoint Explanation',collapsible = T,width = 12,ppt)),
-        fluidRow(tags$hr()),
-        br(),
-        fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionButton("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
-        fluidRow(conditionalPanel(
-          condition = "input.dml > 0",
-          tabBox(id = "ppt_tabBox", title = 'Data Tables', width = 6,
-                 tabPanel('ATE DT', dataTableOutput("ATE")),
-                 tabPanel('Model Summary DT', dataTableOutput("plr"))
-          )
-        ))
-
+  fluidPage(shinyjs::useShinyjs(),JS_body, css_body,hidden_buttons,
+            fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
+                                                      tabBox(id = 'overview_tabBox',
+                                                             tabPanel('Overview', p(intro_text)),
+                                                             tabPanel('Methodology', p(methodology_text))
+                                                      ))),
+            fluidRow(tags$hr(),width=12),
+            br(),
+            fluidRow(shinydashboardPlus::box( title = 'DML Powerpoint Explanation',collapsible = T,width = 12,
+                                              ppt
+                                              
+            )),
+            fluidRow(tags$hr()),
+            br(),
+            fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionButton("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
+            fluidRow(conditionalPanel(
+              condition = "input.dml > 0",
+              tabBox(id = "ppt_tabBox", title = 'Data Tables', width = 6,
+                     tabPanel('ATE DT', dataTableOutput("ATE")),
+                     tabPanel('Model Summary DT', dataTableOutput("plr"))
+              )
+            ))
+            
   ))
 
+########################## notes:
+"
+If I ever have a need to display a powerpoint that is rendered from an RMD filed this is the code I need to use:
+## rmd file:
+- render slidy_presentation.Rmd
+- move the html to the www folder
 
+Server:
+## this code allows for full screen capability
+observeEvent(input$fullscreenBtn, {runjs('var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {
+if (document.exitFullscreen) {document.exitFullscreen();}}')})
 
+UI: 
+## create a variable that renders that allows me to access my html rendered from my 'slidy_presentation.Rmd' file
+## even though the src pathfile doesn't reference a www having the .html in the www is necessary, for some reason we don't need to reference the www
+ppt <-  tags$iframe(
+  id = 'slidesIframe',
+  src = './slidy_presentation.html', ### figure this out , 
+  width = '100%', height = '766px',
+  class = 'iframe-border',
+  allowfullscreen = TRUE, mozallowfullscreen = TRUE, webkitallowfullscreen = TRUE
+)
+
+## output the object like so:
+column(width=6,align='center',actionButton('fullscreenBtn', 'Toggle Fullscreen', onclick = 'toggleFullScreen();'),ppt)
+"
 
 
 
