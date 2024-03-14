@@ -241,29 +241,35 @@ def optimize_and_update_models_parallel_continuous(X_train, X_test, y_train, y_t
     return lasso_model, xgb_model, rf_model
 
 def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
+  
   optuna.logging.set_verbosity(optuna.logging.WARNING)
-  print("treatments: ", treatments)
-  print("n_treatments: ",n_treatments)
+  #print("treatments: ", treatments)
+  #print("n_treatments: ",n_treatments)
   date_columns = data.select_dtypes(include='datetime64').columns 
-  print("date columns :",date_columns)
+  #print("date columns :",date_columns)
   timestamp_columns = data.select_dtypes(include='datetime64[ns, UTC]').columns 
-  print("timestamp_columns", timestamp_columns)
+  #print("timestamp_columns", timestamp_columns)
   # Combine date and timestamp columns
   columns_to_drop = date_columns.union(timestamp_columns) 
   # Drop identified columns
   data = data.drop(columns=columns_to_drop)
   og_cols = data.columns
- 
+  
   string_treatments = [col for col in data.columns if data[col].dtype == 'O' and col in treatments]
   string_treatments_dummies = []
   for col in string_treatments:
     treatment_dummies = pd.get_dummies(data[col], prefix=col, sparse=True)
     string_treatments_dummies.extend(treatment_dummies.columns.tolist())
-    data = pd.concat([data.drop(columns=[col]), treatment_dummies], axis=1)
+  
+  data = pd.get_dummies(data,sparse=True)
   
   #data = pd.get_dummies(data,sparse=True)
   data = data.apply(lambda col: pd.to_numeric(col, errors='coerce')).astype(float)
   np.random.seed(123)
+  #### checing to see if data has NA values
+  columns_w_nan = data.columns[data.isna().any()].tolist()
+  print("columns with NaN values :", columns_w_nan)
+  ####
   X = pd.DataFrame(data.drop([outcome],axis=1), columns=data.drop([outcome],axis=1).columns)
   y = data[outcome]
   # check if outcome is binary
@@ -320,7 +326,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     treatments = treatments
    
   binary_columns = [col for col in X.columns if set(data[col].unique()) == {0.0, 1.0}] 
-  binary_treatments = [value for value in binary_columns if value in treatments] + string_treatments_dummies
+  binary_treatments = [value for value in binary_columns if value in treatments]  + string_treatments_dummies
   print("binarytreatments: ",binary_treatments)
   continuous_treatments = [col for col in X.columns if len(X[col].unique()) > 2 and col in treatments]
   print("continuous_treatments: ",continuous_treatments)
@@ -440,7 +446,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       dml_plr_boost.fit(store_predictions=True)
       boost_summary = dml_plr_boost.summary
 
- 
+     
       # Lasso
       Cs = 0.0001*np.logspace(0, 4, 10)
       np.random.seed(123)
@@ -489,7 +495,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     final_plr_summary['ATE'] = np.where(final_plr_summary['Significant'],final_plr_summary['ATE'],np.nan)
     significant_treatments = final_plr_summary[['treatment','Significant', 'ATE']].drop_duplicates()
     empty = False
-  elif continuous_treatments:
+  elif continuous_treatments and not binary_treatments:
     print("continuous and not binary")
     final_plr_summary = plr_summary
     final_plr_summary['Significant'] = final_plr_summary['P>|t|'] <= .05
@@ -508,4 +514,4 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
   
   final_plr_summary = final_plr_summary[['treatment','ATE','Significant','method','coef', 'std err', 't', 'P>|t|', '2.5 %', '97.5 %','type']]
   print("done with dml functions")
-  return significant_treatments,final_plr_summary,empty
+  return significant_treatments,final_plr_summary ,empty
