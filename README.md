@@ -7,7 +7,7 @@ In addition to learning about causal analysis, users can also gain advanced know
 
 ## Integrating Python Scripts within R/Rshiny
 
-Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly.
+Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly. (If you use my created dml.py file  a citation is highly appreciated: [Citation](#citation))
 
 ## Modularizing RShiny Tabs
 
@@ -50,3 +50,39 @@ Learn how to incorporate JavaScript code into your RShiny app for additional fun
 Understand how to source code from other files, enabling values saved in one file to be used in another.
 
 By exploring these features and functionalities, users can gain a comprehensive understanding of causal analysis with Double Machine Learning while also enhancing their skills in various aspects of RShiny app development.
+
+<a name="citation"></a>
+## Citation 
+Please, if you use the `dml.py` file in your project, I kindly request that you cite my work with the following:
+
+BibTeX entry:
+
+```bibtex
+@misc{Trivino2024,
+  title   = {[Implementation of Double Machine Learning Algorithm in Python for Integration with RShiny]},
+  author  = {Trivino, Christopher},
+  year    = {2024},
+  url     = {[URL of Your GitHub Repository or Project Page](https://github.com/ctrivino1/DML_Rshiny_App.git)]}
+}
+```
+
+
+## Acknowledgments
+I would like to acknowledge the creators of the DoubleML package for their valuable contribution to this project. They have asked anyone using their package to use this citation:
+
+Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2022), DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python, Journal of Machine Learning Research, 23(53): 1-6, [Link to Paper](https://www.jmlr.org/papers/v23/21-0862.html).
+
+BibTeX entry:
+
+```bibtex
+@article{DoubleML2022,
+      title   = {{DoubleML} -- {A}n Object-Oriented Implementation of Double Machine Learning in {P}ython}, 
+      author  = {Philipp Bach and Victor Chernozhukov and Malte S. Kurz and Martin Spindler},
+      journal = {Journal of Machine Learning Research},
+      year    = {2022},
+      volume  = {23},
+      number  = {53},
+      pages   = {1--6},
+      url     = {http://jmlr.org/papers/v23/21-0862.html}
+}
+
