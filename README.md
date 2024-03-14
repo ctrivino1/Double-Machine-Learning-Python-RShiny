@@ -1,7 +1,7 @@
 
 # RShiny App for Causal Analysis with Double Machine Learning
 
-This RShiny application is designed to help teach students and data scientists about causal analysis using Double Machine Learning (DML). This method is based on the Research paper '[Double/Debiased Machine Learning for Treatment and Causal Parameters](https://arxiv.org/abs/1608.00060)]' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. 
+This RShiny application is designed to help teach students and data scientists about causal analysis using Double Machine Learning (DML). This method is based on the Research paper '[Double/Debiased Machine Learning for Treatment and Causal Parameters](https://arxiv.org/abs/1608.00060)' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. 
 
 In addition to learning about causal analysis, users can also gain advanced knowledge of Rshiny in the following areas:
 
