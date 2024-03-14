@@ -5,54 +5,54 @@ This RShiny application is designed to help teach students and data scientists a
 
 In addition to learning about causal analysis, users can also gain advanced knowledge of Rshiny in the following areas:
 
-## Integrating Python Scripts within R/Rshiny
+### Integrating Python Scripts within R/Rshiny
 
 Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly. If you use my created dml.py function a citation is highly appreciated: [Citation](#citation)
 
-## Modularizing RShiny Tabs
+### Modularizing RShiny Tabs
 
 Understand how to modularize an RShiny app using files for better organization, espeically for large Rshiny projects.
 
-## Using Reactive Function
+### Using Reactive Function
 
 Explore how to use reactive functions effectively and save reactive variables for subsequent calculations.
 
-## Incorporating Google Slides
+### Incorporating Google Slides
 
 Learn how to incorporate Google Slides into your RShiny app, allowing users to view slides seamlessly.
 
-## Including Custom HTML Objects
+### Including Custom HTML Objects
 
 Understand how to include custom HTML objects rendered from an .Rmd file directly into your RShiny app.
 
-## Incorporating Objects from a www File
+### Incorporating Objects from a www File
 
 Discover how to incorporate objects from a `www` file into your app, as instructed at the bottom of the `dml_ui.R` file located in the `tabs` folder.
 
-## Using Slidy Presentation in RMD Files
+### Using Slidy Presentation in RMD Files
 
 Learn how to utilize the `slidy_presentation` option for RMD files and customize the output using CSS code, as explained in the notes section of the `.Rmd` file.
 
-## Setting Up Virtual Python Environment
+### Setting Up Virtual Python Environment
 
 Understand how to set up a virtual Python environment within RShiny using the `.Rprofile` file.
 
-## Incorporating CSS for Customized UI Options
+### Incorporating CSS for Customized UI Options
 
 Explore how to incorporate CSS for customized UI options, enhancing the visual appeal of your RShiny app.The CSS code is in a variable called 'css_body' in the  `dml_ui.R` file.
 
-## Incorporating JavaScript Code
+### Incorporating JavaScript Code with Rshiny 
 
 Learn how to incorporate JavaScript code into your RShiny app for additional functionality and interactivity.The CSS code is in a variable called 'JS_body' in the  `dml_ui.R` file.
 
-## Sourcing Code from Other Files
+### Sourcing Code from Other Files
 
 Understand how to source code from other files, enabling values saved in one file to be used in another.
 
 By exploring these features and functionalities, users can gain a comprehensive understanding of causal analysis with Double Machine Learning while also enhancing their skills in various aspects of RShiny app development.
 
 <a name="citation"></a>
-## Citation 
+### Citation 
 Please, if you use the `dml.py` file in your project, I kindly request that you cite my work with the following:
 
 BibTeX entry:
@@ -67,7 +67,7 @@ BibTeX entry:
 ```
 
 
-## Acknowledgments
+### Acknowledgments
 I would like to acknowledge the creators of the DoubleML package for their valuable contribution to this project. They have asked anyone using their package to use this citation:
 
 Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. (2022), DoubleML - An Object-Oriented Implementation of Double Machine Learning in Python, Journal of Machine Learning Research, 23(53): 1-6, [Link to Paper](https://www.jmlr.org/papers/v23/21-0862.html).
