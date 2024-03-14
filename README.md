@@ -3,7 +3,15 @@
 
 This RShiny application is designed to help teach students and data scientists about causal analysis using Double Machine Learning (DML). This method is based on the Research paper '[Double/Debiased Machine Learning for Treatment and Causal Parameters](https://arxiv.org/abs/1608.00060)' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. 
 
-In addition to learning about causal analysis, users can also gain advanced knowledge of Rshiny in the following areas:
+### Project Status
+This project is currently ongoing and is being actively developed. While the DML Causal Analysis Tool is functional and available for exploration, I am  working to enhance its features and functionality.
+
+Feel free to explore the tool and provide feedback or suggestions for improvement. Your input is valuable in shaping the future direction of this project.
+
+Thank you for your interest and support!
+[Launch the DML Causal Analysis Tool](https://big-cat.shinyapps.io/DML_Causal_Analyisis_Tool/)
+
+## In addition to learning about causal analysis, users can gain advanced knowledge of RShiny in the following areas:
 
 ### Integrating Python Scripts within R/Rshiny
 
@@ -60,10 +68,10 @@ BibTeX entry:
 
 ```bibtex
 @misc{Trivino2024,
-  title   = {[Implementation of Double Machine Learning Algorithm in Python for Integration with RShiny]},
+  title   = {Rshiny Implementation of Double Machine Learning with Python},
   author  = {Trivino, Christopher},
   year    = {2024},
-  url     = {https://github.com/ctrivino1/DML_Rshiny_App.git)} 
+  url     = {https://github.com/DoubleML/doubleml-for-py.git}
 }
 ```
 
