@@ -17,7 +17,7 @@ intro_text <- tags$div(HTML("
 
   <strong>Implementation Methodology:</strong><br>
 
-  Our app follows the methodology outlined in the research paper 'Double/Debiased Machine Learning for Treatment and Causal Parameters' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, James Robins. By adopting the principles and techniques proposed in this paper, our app aims to provide data scientists with a comprehensive and effective tool for mastering double machine learning in causal analysis."
+  This app follows the methodology outlined in the research paper 'Double/Debiased Machine Learning for Treatment and Causal Parameters' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. By adopting the principles and techniques proposed in this paper, this app aims to provide data scientists with a comprehensive and effective tool for mastering double machine learning in causal analysis."
 ), class = 'increase-fontsize-text')
 
 methodology_text <- tags$div(HTML("
