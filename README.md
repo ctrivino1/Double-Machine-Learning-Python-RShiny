@@ -9,19 +9,19 @@ In addition to learning about causal analysis, users can also gain advanced know
 
 Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly. If you use my created dml.py function a citation is highly appreciated: [Citation](#citation)
 
-### Modularizing RShiny Tabs
+### Modularizing RShiny apps
 
 Understand how to modularize an RShiny app using files for better organization, espeically for large Rshiny projects.
 
-### Using Reactive Function
+### Using Reactive Functions 
 
 Explore how to use reactive functions effectively and save reactive variables for subsequent calculations.
 
-### Incorporating Google Slides
+### embedding Google Slides 
 
 Learn how to incorporate Google Slides into your RShiny app, allowing users to view slides seamlessly.
 
-### Including Custom HTML Objects
+### Including Custom HTML Objects 
 
 Understand how to include custom HTML objects rendered from an .Rmd file directly into your RShiny app.
 
@@ -41,11 +41,12 @@ Understand how to set up a virtual Python environment within RShiny using the `.
 
 Explore how to incorporate CSS for customized UI options, enhancing the visual appeal of your RShiny app.The CSS code is in a variable called 'css_body' in the  `dml_ui.R` file.
 
-### Incorporating JavaScript Code with Rshiny 
+### Incorporating JavaScript Code for custom Rshiny functionality 
 
-Learn how to incorporate JavaScript code into your RShiny app for additional functionality and interactivity.The CSS code is in a variable called 'JS_body' in the  `dml_ui.R` file.
+Learn how to incorporate JavaScript code into your RShiny app for additional functionality and interactivity.The CSS code is in a variable called 'JS_body' in the  `dml_ui.R` file. 
+The JS code in this file allows the minimize button of a box() section to work.
 
-### Sourcing Code from Other Files
+### Sourcing Code from other files
 
 Understand how to source code from other files, enabling values saved in one file to be used in another.
 
