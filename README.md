@@ -7,7 +7,7 @@ In addition to learning about causal analysis, users can also gain advanced know
 
 ## Integrating Python Scripts within R/Rshiny
 
-Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly. (If you use my created dml.py file  a citation is highly appreciated: [Citation](#citation))
+Learn how to integrate Python scripts within RShiny and convert Pandas dataframes back to R data framess seamlessly. If you use my created dml.py function a citation is highly appreciated: [Citation](#citation)
 
 ## Modularizing RShiny Tabs
 
@@ -62,7 +62,7 @@ BibTeX entry:
   title   = {[Implementation of Double Machine Learning Algorithm in Python for Integration with RShiny]},
   author  = {Trivino, Christopher},
   year    = {2024},
-  url     = {[URL of Your GitHub Repository or Project Page](https://github.com/ctrivino1/DML_Rshiny_App.git)]}
+  url     = {https://github.com/ctrivino1/DML_Rshiny_App.git)} 
 }
 ```
 
