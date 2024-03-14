@@ -1,8 +1,7 @@
 source("./global.r")
 
-
-
 ## use the virtual environment to allow python script functions to be used (note: must use source_python)
+
 source_python("./functions/dml.py")
 
 
@@ -24,11 +23,6 @@ render_dml_tab <-
         
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
-        
-        if (py_result[[3]]){
-          remove_modal_spinner()
-          showNotification("No significant Treatment Values found",type='warning',duration=NULL)
-        } else {
           
           
           filter1 <- subset(py_result[[1]], Significant != 'FALSE')
@@ -38,23 +32,22 @@ render_dml_tab <-
           remove_modal_spinner()
           
           
-        }
+        #}
       }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
         #print("treatment list given")
         #print(input$treatments)
         py_dat <- r_to_py(global_dat)
         py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
         
-        if (py_result[[3]]){
-          remove_modal_spinner()
-          showNotification("No significant Treatment Values found",type='warning')
-        } else {
-          filter1 <- subset(py_result[[1]], Significant != 'FALSE')
-          global$ATE_summary  <-subset(filter1, ATE != 'NULL')
+       # gets rid of duplicate treatments and keeps the treatment that is signficiant
+        ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
+        
+          global$ATE_summary  <- ate_sum
+          test <<- py_result[[1]]
           print("ATE data")
           print(global$ATE_summary)
           global$plr_summary <- py_result[[2]]
-        }
+        
         remove_modal_spinner()
       } else {
         remove_modal_spinner()
@@ -133,7 +126,7 @@ render_dml_tab <-
                  var data = table.row( this ).data();
                  Shiny.onInputChange('dblclickIndexJS_2', data[0]);
                                                 });"
-                   
+               
     )
     
     ## render the ATE DT
@@ -210,11 +203,53 @@ render_dml_tab <-
     #   graph
     #   }})
     
-   
+    
+    ### for pension data###################################################
+    # passed_male <- reactive({
+    #   print("passed male working")
+    #   # Extract the 'male' parameter from the URL
+    #   url_params <- strsplit(session$clientData$url_search, "&")[[1]]
+    #   male_param <- grep("male=", url_params, value = TRUE)
+    #   if (length(male_param) > 0) {
+    #     male_value <- gsub("male=", "", male_param)
+    #     male_value <- gsub("^\\?","",male_value)
+    #     male_value <- URLdecode(male_value)
+    #     male_vector <- unlist(strsplit(male_value,","))
+    #     male_vector <<- unique(male_vector)
+    #     distinct_male_value  <- as.list(male_vector)
+    #     global$tableau_filter <- distinct_male_value
+    #     print("tableau filter: ")
+    #     print(global$tableau_filter)
+    #     #distinct_male_value  <- paste(male_vector, collapse = ",")
+    #     return(distinct_male_value)
+    # 
+    #   } else {
+    #     return('No value')
+    #   }
+    # 
+    # })
+    
+    # test_dat <- reactive({
+    #   print("test_dat working")
+    #   if (is.null(global$tableau_filter)){
+    #     print("OG data")} else {
+    #       dat <<- filter(global_dat,male==global$tableau_filter)
+    #       print("filtered gender for: ")
+    #       print(unique(dat$male))
+    #   }})
+
     
     
     
+    #observe(global$test_dat <- test_dat())
     
-  }
+    #observe(global$tableau_filter  <- passed_male())
+    
+    # output$filter <- renderPrint({
+    #   paste("gender filter selected from Tableau: ",global$tableau_filter )
+    # })
+    observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
+    
+    }
 
 
