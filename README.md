@@ -11,8 +11,7 @@ Thank you for your interest and support!
 [Launch the DML Causal Analysis Tool](https://big-cat.shinyapps.io/DML_Causal_Analyisis_Tool/)
 
 # Educational Features
-<details>
-  <summary>Click to expand</summary>
+
 ### RShiny App Development
 
 -   **Modularizing RShiny apps**: Understand how to modularize an RShiny app using files for better organization, especially for large RShiny projects.
@@ -47,7 +46,7 @@ Thank you for your interest and support!
 ### Data Science Best Practices
 
 -   **Data Science Best Practices**: Gain exposure to best practices in data preprocessing, analysis, and interpretation. Learn how to validate and interpret causal inference results in real-world scenarios.
-</details>
+
 
 <a name="citation"></a>
 # Citation 
