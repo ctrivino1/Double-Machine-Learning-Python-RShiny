@@ -1,5 +1,8 @@
 source("./global.r")
-# Your specific introduction paragraph text with numbered bullet points
+
+
+
+#### Intro Text ####
 # tags$p lets me adjust the font size after the html text
 intro_text <- tags$div(HTML("
   <strong>Double Machine Learning (DML)</strong> is a powerful approach in causal analysis, specifically designed to address the limitations of using traditional machine learning methods for estimating causal parameters. Unlike correlation-based methods that may overlook the complexities of causal relationships, DML provides a robust framework for obtaining accurate estimates of individual regression coefficients, average treatment effects, and other essential parameters.<br><br>
@@ -20,6 +23,7 @@ intro_text <- tags$div(HTML("
   This app follows the methodology outlined in the research paper 'Double/Debiased Machine Learning for Treatment and Causal Parameters' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. By adopting the principles and techniques proposed in this paper, this app aims to provide data scientists with a comprehensive and effective tool for mastering double machine learning in causal analysis."
 ), class = 'increase-fontsize-text')
 
+#### Methedology Text ####
 methodology_text <- tags$div(HTML("
   <strong>Methodology:</strong><br>
   Our approach adapts to the nature of the treatment variable:<br><br>
@@ -38,6 +42,7 @@ methodology_text <- tags$div(HTML("
   The first Data Table tab 'ATE DT' displays the three-model average ATE score for continuous treatments and the singular ATE score for binary treatments. The 'Significant' column in the first data table flags whether the model has a significant p-value.The second tab 'Model Summary DT' displays a comprehensive data table for each individual model used for computing the ATE for each treatment. This table provides model summary statistics which includes: slopes, p-values, and confidence intervals."
 ), class = 'increase-fontsize-text')
 
+#### css_body code ####
 css_body <- tags$head(
   tags$style(
     HTML(" 
@@ -76,6 +81,8 @@ css_body <- tags$head(
     font-size: 20px;
     }
     
+    /* Additional JavaScript code for custom options */
+    /* Add your custom JavaScript code here */
 
     
     
@@ -83,9 +90,11 @@ css_body <- tags$head(
   )
 )
 
+#### Hiden Btns ####
 hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
 
-JS_body <- tags$script(HTML(
+#### JS UI Body ####
+JS_UI_body <- tags$script(HTML(
   "
         // JavaScript function to handle box minimization
         $(document).on('click', '.box-header .fa-minus', function() {
@@ -104,9 +113,11 @@ JS_body <- tags$script(HTML(
         // Additional JavaScript code for custom options
         // Add your custom JavaScript code here
         
+        
+        
         "))
-
-### for powerpoint hosted through google slides
+#### Google Slides PPT ####
+# Hosting a google slides ppt
 ppt <-  tags$iframe(
   id = "slidesIframe",
   src = "https://docs.google.com/presentation/d/e/2PACX-1vQLNvTbl2icrWS8nYTRswhfn8-sqJBUlLbsxlovPVkh6xp6KFDLmx3Z6BmcfofCcQ/embed?start=true&loop=true&delayms=60000",
@@ -117,11 +128,11 @@ ppt <-  tags$iframe(
 
 
 
+#### UI Body ####
 
-##### the app body
 dml_outcome <- tabPanel(
   "Causation",
-  fluidPage(shinyjs::useShinyjs(),JS_body, css_body,hidden_buttons,
+  fluidPage(shinyjs::useShinyjs(),JS_UI_body, css_body,hidden_buttons,
             fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
                                                       tabBox(id = 'overview_tabBox',
                                                              tabPanel('Overview', p(intro_text)),
@@ -146,7 +157,8 @@ dml_outcome <- tabPanel(
             
   ))
 
-########################## notes:
+#### Notes ####
+
 "
 If I ever have a need to display a powerpoint that is rendered from an RMD filed this is the code I need to use:
 ## rmd file:
