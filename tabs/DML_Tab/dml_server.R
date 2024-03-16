@@ -210,7 +210,7 @@ render_dml_tab <-
                          # where each data table is in its own sheet. 
                          list(
                            extend = "collection",
-                           text = "ATE and PLR summary",
+                           text = "ATE and Model Summary Data Download",
                            action = DT::JS(
                              "function ( e, dt, node, config ) {
                                         Shiny.setInputValue('ATE_PLR_Dat', true,{priority: 'event'});}"
