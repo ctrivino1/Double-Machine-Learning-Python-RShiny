@@ -53,6 +53,26 @@ render_dml_tab <-
       remove_modal_spinner()
       
     })
+    
+    #### Session info ####
+    session_info <- reactive({
+      session_info_data <- 
+      data.frame(
+        Treatments = str_c(glue("{input$treatments}"), collapse = ","),
+        Target = str_c(glue("{input$outcome}"), collapse = ","), check.names = F)
+      
+      
+      info_dt <-
+        data.frame(sapply(session_info_data, function(x)
+          gsub('"', "", x)))
+      
+      info_dt <- cbind(Filters = rownames(info_dt), info_dt)
+      colnames(info_dt)[2] = "Filter_Values"
+      rownames(info_dt) <- 1:nrow(info_dt)
+      
+      return(info_dt)
+    })
+    
   
     #### Clear Gobal Variabes ####
     #This code clears all global variables if the calculate button is pressed more than once
@@ -93,38 +113,36 @@ render_dml_tab <-
     })
     
     
+    
     #### JS callbacks ####
     # Note: if you have more than one datatable you are doing this for you will have to create more callback variables (ex: callback2, etc)
     # and you will have to rename the setInputValues for example hoverIndexJS2,hoverIndexJS3, etc.
     # this code is creating Rshiny inputs through javascript while a user hovers,clicks, or double clicks values in columns/rows on data tables
+    
+    # if you only want one or two of these features enabled in your data table then just take the code out for which features you don't want
+    # also if you are only wanting a user to be able to click anywhere on a specific row and only get one specific value out of that row change data to data[0] (data[0] = the first value in the first column of the row), change this as needed
+    
     callback <- "
     /* code for columns on hover */
-      table.on('mouseenter', 'td', function() {
-        var td = $(this);
-        if(table.cell( this ).index().columnVisible == 0){
-          var data = table.row( this ).data();
-          Shiny.setInputValue('hoverIndexJS', data[0],{priority: 'event'});}
-        
-        if(table.cell( this ).index().columnVisible > 0){
-          var data = 0;
-          Shiny.setInputValue('hoverIndexJS', data,{priority: 'event'});}
-        
-        
-      });
-    
+    table.on('mouseenter', 'td', function() {
+        var data = $(this).text(); // Get the text value of the cell
+        Shiny.setInputValue('hoverIndexJS', data, {priority: 'event'});
+    });
+
     /* code for cell content on click */
-      table.on('click', 'td', function() {
-        var td = $(this);
-        var data = table.row( this ).data();
-        Shiny.setInputValue('clickIndexJS', data[0], {priority: 'event'});
-        
-      });
+    table.on('click', 'td', function() {
+        var data = $(this).text(); // Get the text value of the cell
+        Shiny.setInputValue('clickIndexJS', data, {priority: 'event'});
+    });
+
     /* code for columns on doubleclick */
-      table.on('dblclick', 'td', function() {
-        var td = $(this);
-        var data = table.row( this ).data();
-        Shiny.onInputChange('dblclickIndexJS', data[0]);
-      })"
+    table.on('dblclick', 'td', function() {
+        var data = $(this).text(); // Get the text value of the cell
+        Shiny.onInputChange('dblclickIndexJS', data);
+    });
+"
+    
+    
     
     
     ## prinint off the Rshiny input values the callbacks give me
@@ -166,7 +184,7 @@ render_dml_tab <-
     ####
     
     #### Render Data Tables ####
-    #### render the ATE DT
+    # render the ATE DT
     output$ATE <- renderDT(
       datatable({
         req(is.data.frame(global$ATE_summary))
@@ -187,7 +205,17 @@ render_dml_tab <-
                          list(
                            extend = "collection",
                            text = 'Reset',
-                           action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test', true, {priority: 'event'});}"))
+                           action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test', true, {priority: 'event'});}")),
+                         # creating a custom download button that will download both data tables in each tab into one excel file
+                         # where each data table is in its own sheet. 
+                         list(
+                           extend = "collection",
+                           text = "ATE and PLR summary",
+                           action = DT::JS(
+                             "function ( e, dt, node, config ) {
+                                        Shiny.setInputValue('ATE_PLR_Dat', true,{priority: 'event'});}"
+                           )
+                         )
           )),selection = "single") %>% 
         formatStyle(0, cursor = 'pointer')) 
     
@@ -215,6 +243,37 @@ render_dml_tab <-
                            action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test2', true, {priority: 'event'});}"))
           )),selection = "single") %>% 
         formatStyle(0, cursor = 'pointer'))
+    
+    
+    #### DT Custom Bttns ####
+    # custom download button for output$ATE
+    # this will combine the filters, and both the ATE & plr DT's together and store them in a reactiveVal object,
+    # then we will call a download button called 'download_all_data' that I manually create and download the excel files
+    chart_download <- reactiveVal()
+    observeEvent(input$ATE_PLR_Dat, {
+      # we put thise ins a list so that we can name the indiviudals tabs of the excel file and store the data we want in that tab
+      ate_dat <- list('ATE DT'= global$ATE_summary)
+      plr_dat <- list('PLR DT' = global$plr_summary)
+      session_info_ <- list("Query&Filters" = session_info())
+      all_data <- append(session_info_,ate_dat)
+      all_data <- append(all_data,plr_dat)
+      chart_download(all_data)
+      runjs("$('#combined_data')[0].click();")
+    })
+    
+    output$combined_data <- downloadHandler(
+      filename = function() {
+        ## name of the xlsx file
+        paste0("Causal_Analyis_Data_", today(), ".xlsx")
+      },
+      content = function(filename) {
+        write.xlsx(x = chart_download() ,
+                   file = filename,
+                   rowNames = FALSE)
+      }
+    )
+    
+    
     
     #### Ploty ggplot EX ####
     # plotly graph example
