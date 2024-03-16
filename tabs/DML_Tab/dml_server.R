@@ -1,11 +1,8 @@
 source("./global.r")
-
-## use the virtual environment to allow python script functions to be used (note: must use source_python)
-
 source_python("./functions/dml.py")
 
 
-### dml function
+####  Python dml function ####
 render_dml_tab <- 
   function(input, output,session) {
     output$value <- renderText({input$n_treats})
@@ -56,9 +53,11 @@ render_dml_tab <-
       remove_modal_spinner()
       
     })
-    ######### This code clears all global variables if the calculate button is pressed more than once
-    ######### this is to ensure that there are no memory issues.
-    ### creating variable for click_count
+  
+    #### Clear Gobal Variabes ####
+    #This code clears all global variables if the calculate button is pressed more than once
+    # this is to ensure that there are no memory issues.
+    # creating variable for click_count
     click_count <- reactiveVal(0)
     observeEvent(input$dml, {
       # Increment the click counter
@@ -93,48 +92,86 @@ render_dml_tab <-
       output$globalenv <- renderText(paste("Global Environment Objects:", paste(global_objects,collapse = ', ')))
     })
     
-    ############################################################################################################
+    
+    #### JS callbacks ####
+    # Note: if you have more than one datatable you are doing this for you will have to create more callback variables (ex: callback2, etc)
+    # and you will have to rename the setInputValues for example hoverIndexJS2,hoverIndexJS3, etc.
+    # this code is creating Rshiny inputs through javascript while a user hovers,clicks, or double clicks values in columns/rows on data tables
+    callback <- "
+    /* code for columns on hover */
+      table.on('mouseenter', 'td', function() {
+        var td = $(this);
+        if(table.cell( this ).index().columnVisible == 0){
+          var data = table.row( this ).data();
+          Shiny.setInputValue('hoverIndexJS', data[0],{priority: 'event'});}
+        
+        if(table.cell( this ).index().columnVisible > 0){
+          var data = 0;
+          Shiny.setInputValue('hoverIndexJS', data,{priority: 'event'});}
+        
+        
+      });
+    
+    /* code for cell content on click */
+      table.on('click', 'td', function() {
+        var td = $(this);
+        var data = table.row( this ).data();
+        Shiny.setInputValue('clickIndexJS', data[0], {priority: 'event'});
+        
+      });
+    /* code for columns on doubleclick */
+      table.on('dblclick', 'td', function() {
+        var td = $(this);
+        var data = table.row( this ).data();
+        Shiny.onInputChange('dblclickIndexJS', data[0]);
+      })"
     
     
+    ## prinint off the Rshiny input values the callbacks give me
+    observeEvent(input$hoverIndexJS, { 		
+      if (input$hoverIndexJS != 0 ){
+        info <- input$hoverIndexJS
+        
+        global$hover_info <- info
+        print("Hover info:")
+        print(global$hover_info)
+      } else {
+        global$hover_info <- NULL 
+      }
+    })
     
+    observeEvent(input$clickIndexJS, { 		
+      if (!is.null(input$clickIndexJS)){
+        info <- input$clickIndexJS
+        
+        global$click_info <- info
+        print("Single click info:")
+        print(global$click_info)
+      } else {
+        global$click_info <- NULL 
+      }
+    })
     
-    ## call back for output DT's this allows for tooltips and other custom filters to be applied on click, double click and hover
-    callback2 <- c("
-                /* code for columns on hover */
-                 table.on('mouseenter', 'td', function() {
-                 var td = $(this);
-                if(table.cell( this ).index().columnVisible == 0){
-                 var data = table.row( this ).data();
-                 Shiny.setInputValue('hoverIndexJS_2', data[0],{priority: 'event'});}
-                
-                if(table.cell( this ).index().columnVisible > 0){
-                var data = 0;
-                Shiny.setInputValue('hoverIndexJS_2', data,{priority: 'event'});}
-                
-                 });
-                
-                /* code for cell content on click */
-                 table.on('click', 'td', function() {
-                 var td = $(this);
-                 var data = table.row( this ).data();
-                 Shiny.setInputValue('clickIndexJS_2', data[0], {priority: 'event'});
-                 
-                 });
-               /* code for columns on doubleclick */
-                 table.on('dblclick', 'td', function() {
-                 var td = $(this);
-                 var data = table.row( this ).data();
-                 Shiny.onInputChange('dblclickIndexJS_2', data[0]);
-                                                });"
-               
-    )
+    observeEvent(input$dblclickIndexJS, { 		
+      if (!is.null(input$dblclickIndexJS)){
+        info <- input$dblclickIndexJS
+        
+        global$dblclick_info <- info
+        print("Double click info:")
+        print(global$dblclick_info)
+      } else {
+        global$dblclick_info <- NULL 
+      }
+    })
+    ####
     
-    ## render the ATE DT
+    #### Render Data Tables ####
+    #### render the ATE DT
     output$ATE <- renderDT(
       datatable({
         req(is.data.frame(global$ATE_summary))
         global$ATE_summary},
-        #callback =JS(callback),
+        callback =JS(callback), ## using callback variable which is defined above
         rownames = F, 
         extensions = c('Select','Buttons','FixedColumns'),
         fillContainer = TRUE, 
@@ -159,7 +196,7 @@ render_dml_tab <-
       datatable({
         req(is.data.frame(global$plr_summary))
         global$plr_summary},
-        #callback =JS(callback),
+        #callback =JS(callback2), # create a callback2 variable
         rownames = F, 
         extensions = c('Select','Buttons','FixedColumns'),
         fillContainer = TRUE, 
@@ -178,7 +215,8 @@ render_dml_tab <-
                            action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test2', true, {priority: 'event'});}"))
           )),selection = "single") %>% 
         formatStyle(0, cursor = 'pointer'))
-    #####################################
+    
+    #### Ploty ggplot EX ####
     # plotly graph example
     # output$plotlygraph <- renderPlotly({
     #   if (!is.null(global$ATE_summary)) {
@@ -203,51 +241,9 @@ render_dml_tab <-
     #   graph
     #   }})
     
-    
-    ### for pension data###################################################
-    # passed_male <- reactive({
-    #   print("passed male working")
-    #   # Extract the 'male' parameter from the URL
-    #   url_params <- strsplit(session$clientData$url_search, "&")[[1]]
-    #   male_param <- grep("male=", url_params, value = TRUE)
-    #   if (length(male_param) > 0) {
-    #     male_value <- gsub("male=", "", male_param)
-    #     male_value <- gsub("^\\?","",male_value)
-    #     male_value <- URLdecode(male_value)
-    #     male_vector <- unlist(strsplit(male_value,","))
-    #     male_vector <<- unique(male_vector)
-    #     distinct_male_value  <- as.list(male_vector)
-    #     global$tableau_filter <- distinct_male_value
-    #     print("tableau filter: ")
-    #     print(global$tableau_filter)
-    #     #distinct_male_value  <- paste(male_vector, collapse = ",")
-    #     return(distinct_male_value)
-    # 
-    #   } else {
-    #     return('No value')
-    #   }
-    # 
-    # })
-    
-    # test_dat <- reactive({
-    #   print("test_dat working")
-    #   if (is.null(global$tableau_filter)){
-    #     print("OG data")} else {
-    #       dat <<- filter(global_dat,male==global$tableau_filter)
-    #       print("filtered gender for: ")
-    #       print(unique(dat$male))
-    #   }})
+  
 
-    
-    
-    
-    #observe(global$test_dat <- test_dat())
-    
-    #observe(global$tableau_filter  <- passed_male())
-    
-    # output$filter <- renderPrint({
-    #   paste("gender filter selected from Tableau: ",global$tableau_filter )
-    # })
+    #### PPT Full Screen Capability ####
     observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
     
     }
