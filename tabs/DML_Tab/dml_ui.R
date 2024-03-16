@@ -146,7 +146,7 @@ dml_outcome <- tabPanel(
             )),
             fluidRow(tags$hr()),
             br(),
-            fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionButton("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
+            fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionBttn("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
             fluidRow(conditionalPanel(
               condition = "input.dml > 0",
               tabBox(id = "ppt_tabBox", title = 'Data Tables', width = 6,
@@ -184,8 +184,6 @@ ppt <-  tags$iframe(
 ## output the object like so:
 column(width=6,align='center',actionButton('fullscreenBtn', 'Toggle Fullscreen', onclick = 'toggleFullScreen();'),ppt)
 "
-
-
 
 
 
