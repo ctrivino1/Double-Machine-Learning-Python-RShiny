@@ -91,7 +91,7 @@ css_body <- tags$head(
 )
 
 #### Hiden Btns ####
-hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"))
+hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"),downloadButton('combined_data'))
 
 #### JS UI Body ####
 JS_UI_body <- tags$script(HTML(
