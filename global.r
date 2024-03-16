@@ -25,7 +25,9 @@ global <- reactiveValues(
   plr_summary = NULL,
   non_sig_treats = NULL,
   trigger = NULL,
-  tableau_filter = NULL)
+  hover_info = NULL,
+  click_info = NULL,
+  dblclick_info = NULL)
 
 
 
