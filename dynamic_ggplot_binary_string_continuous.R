@@ -1,22 +1,22 @@
-# Load the required libraries
-library(shiny)
-library(ggplot2)
-library(tidyverse)
-
 # Load data
 data("iris")
 
 # Add a binary column randomly
 set.seed(123) # Setting seed for reproducibility
-iris$binary_column <- as.factor(sample(0:1, nrow(iris), replace = TRUE))  # Convert to factor
+iris$binary_column <- sample(0:1, nrow(iris), replace = TRUE)  # Convert to factor
+
+string_or_binary_cols <- sapply(iris, function(x) is.character(x) || (is.numeric(x) && all(unique(x) %in% c(0, 1))))
+
+# Convert identified columns to factor columns
+iris[string_or_binary_cols] <- lapply(iris[string_or_binary_cols], as.factor)
 
 # Function to classify variable types
 get_variable_type <- function(variable) {
-  if (is.factor(variable)) {
-    "string"
-  } else if ((is.numeric(variable) && length(unique(variable)) == 2 && all(unique(variable) %in% c(0, 1))) ||
-             (is.character(variable) && length(unique(variable)) == 2 && all(unique(variable) %in% c("0", "1")))) {
+  if ((is.factor(variable) && all(levels(variable) %in% c("0", "1"))) ||
+      (is.numeric(variable) && all(variable %in% c(0, 1)))) {
     "binary"
+  } else if (is.factor(variable)) {
+    "string"
   } else {
     "continuous"
   }
@@ -30,7 +30,7 @@ ui <- fluidPage(
     selectInput(inputId = "x_sel", label = "Select x variable(s)",
                 choices = names(iris), multiple = TRUE),
     selectInput(inputId = "group_var", label = "Select group variable for color",
-                choices = c("None", names(iris)), selected = "None")
+                choices = c("None", names(iris)[sapply(iris, is.factor) | sapply(iris, function(x) get_variable_type(x) == "binary")]), selected = "None")
   ),
   mainPanel(
     tabsetPanel(
@@ -90,11 +90,11 @@ server <- function(input, output, session) {
           }
         } else {
           if (input$group_var == "None") {
-            ggplot(iris, aes_string(x = x_var, y = input$y_sel)) +
+            ggplot(iris, aes_string(x = x_var, y = input$y_sel )) +
               geom_point() +
               ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel))
           } else {
-            ggplot(iris, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +
+            ggplot(iris, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +
               geom_point() +
               ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring"))
           }
