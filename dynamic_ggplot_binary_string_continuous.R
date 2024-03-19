@@ -45,9 +45,9 @@ ui <- fluidPage(
   mainPanel(
     tabsetPanel(
       #tabPanel('test', uiOutput("binary_plots")),         # Tab for binary variables
-      tabPanel('Binary', uiOutput("binary_plots")),
-      tabPanel("Continuous", uiOutput("continuous_plots")), # Tab for continuous variables
-      tabPanel("String", uiOutput("string_plots"))          # Tab for string variables
+      tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
+      tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")), # Tab for continuous variables
+      tabPanel(textOutput('string_count'), uiOutput("string_plots"))          # Tab for string variables
     )
   )
 )
@@ -92,6 +92,16 @@ server <- function(input, output, session) {
     cat("Binary count:", global$binary_count, "\n")
     cat("Continuous count:", global$continuous_count, "\n")
     cat("String count:", global$string_count, "\n")
+  })
+  
+  output$binary_count <- renderText({
+    paste("Binary (",global$binary_count,")")
+  })
+  output$continuous_count <- renderText({
+    paste('Continuous (',global$continuous_count,')')
+  })
+  output$string_count <- renderText({
+    paste("String (", global$string_count,")")
   })
   
   output$binary_plots <- renderUI({
