@@ -55,7 +55,7 @@ Please, if you use the `dml.py` file in your project, I kindly request that you 
 BibTeX entry:
 
 ```bibtex
-@misc{Trivino2024,
+@misc{DMLShinyPython,
   title   = {Rshiny Implementation of Double Machine Learning with Python},
   author  = {Trivino, Christopher},
   year    = {2024},
