@@ -23,6 +23,7 @@ intro_text <- tags$div(HTML("
   This app follows the methodology outlined in the research paper 'Double/Debiased Machine Learning for Treatment and Causal Parameters' by Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. By adopting the principles and techniques proposed in this paper, this app aims to provide data scientists with a comprehensive and effective tool for mastering double machine learning in causal analysis."
 ), class = 'increase-fontsize-text')
 
+
 #### Methedology Text ####
 methodology_text <- tags$div(HTML("
   <strong>Methodology:</strong><br>
@@ -41,6 +42,7 @@ methodology_text <- tags$div(HTML("
   <strong>DataTable Structure:</strong><br>
   The first Data Table tab 'ATE DT' displays the three-model average ATE score for continuous treatments and the singular ATE score for binary treatments. The 'Significant' column in the first data table flags whether the model has a significant p-value.The second tab 'Model Summary DT' displays a comprehensive data table for each individual model used for computing the ATE for each treatment. This table provides model summary statistics which includes: slopes, p-values, and confidence intervals."
 ), class = 'increase-fontsize-text')
+
 
 #### css_body code ####
 css_body <- tags$head(
@@ -81,6 +83,16 @@ css_body <- tags$head(
     font-size: 20px;
     }
     
+    /* creating a class to add a scroll bar to the contents displayed in tabs */
+    .custom-tab-scrollbar {
+    height: 50vh;
+    overflow-y: auto;
+    padding: 10px;
+    }
+    
+    
+    
+    
     /* Additional JavaScript code for custom options */
     /* Add your custom JavaScript code here */
 
@@ -90,8 +102,10 @@ css_body <- tags$head(
   )
 )
 
+
 #### Hiden Btns ####
 hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"),downloadButton('combined_data'))
+
 
 #### JS UI Body ####
 JS_UI_body <- tags$script(HTML(
@@ -110,12 +124,20 @@ JS_UI_body <- tags$script(HTML(
           box.find('.box-header .fa-plus').removeClass('fa-plus').addClass('fa-minus');
         });
         
+        // Code to automatically click the minimze options on all sections in the app that can be minimized
+        $(document).ready(function(){
+        // Simulate a click on the collapse button
+        $('.box-header .fa-minus').click();
+});
+        
         // Additional JavaScript code for custom options
         // Add your custom JavaScript code here
         
         
         
         "))
+
+
 #### Google Slides PPT ####
 # Hosting a google slides ppt
 ppt <-  tags$iframe(
@@ -134,7 +156,7 @@ dml_outcome <- tabPanel(
   "Causation",
   fluidPage(shinyjs::useShinyjs(),JS_UI_body, css_body,hidden_buttons,
             fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
-                                                      tabBox(id = 'overview_tabBox',
+                                                      tabBox(id = 'overview_tabBox', 
                                                              tabPanel('Overview', p(intro_text)),
                                                              tabPanel('Methodology', p(methodology_text))
                                                       ))),
@@ -145,7 +167,77 @@ dml_outcome <- tabPanel(
                                               
             )),
             fluidRow(tags$hr()),
+            #####data exploration######
+            fluidRow(width = 12, box(title = 'Explore the Data', collapsible = T, width = 12,
+            fluidRow(
+              column(width = 2, # Adjust the width as needed
+                     pickerInput(
+                       inputId = "y_sel",
+                       label = "Select y variable",
+                       choices = names(global_dat),
+                       options = list(
+                         `actions-box` = TRUE,
+                         `live-search` = TRUE,
+                         `selected-text-format` = "count > 3",
+                         `count-selected-text` = "{0} items selected",
+                         `deselect-all-text` = "Clear All",
+                         `select-all-text` = "Select All",
+                         `none-selected-text` = "None selected"
+                       ),
+                       multiple = FALSE
+                     )
+              ),
+              column(width = 2, # Adjust the width as needed
+                     pickerInput(
+                       inputId = "x_sel",
+                       label = "Select x variables",
+                       choices = names(global_dat),
+                       options = list(
+                         `actions-box` = TRUE,
+                         `live-search` = TRUE,
+                         `selected-text-format` = "count > 3",
+                         `count-selected-text` = "{0} items selected",
+                         `deselect-all-text` = "Clear All",
+                         `select-all-text` = "Select All",
+                         `none-selected-text` = "None selected"
+                       ),
+                       multiple = TRUE
+                     )
+              ),
+              column(width = 2, # Adjust the width as needed
+                     pickerInput(
+                       inputId = "group_var",
+                       label = "Select group variable for color",
+                       choices = c('None selected', names(global_dat)[sapply(global_dat, is.factor) | sapply(global_dat, function(x) get_variable_type(x) == "binary")]),
+                       options = list(
+                         `actions-box` = TRUE,
+                         `live-search` = TRUE,
+                         `selected-text-format` = "count > 3",
+                         `count-selected-text` = "{0} items selected",
+                         `deselect-all-text` = "Clear All",
+                         `select-all-text` = "Select All",
+                         `none-selected-text` = "None selected"
+                       ),
+                       multiple = FALSE
+                     ), checkboxInput('regression',label = 'Add Regression Line',value = T)
+              )
+            ),
+                     fluidRow(width = 12,shinydashboardPlus::box( width = 12,
+                       tags$div(
+                         class = "custom-tab-scrollbar",
+                         tabBox(width = 12,
+                           tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
+                           tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")),
+                           tabPanel(textOutput('string_count'), uiOutput("string_plots")),
+                           id = "tabset1"
+                         )
+                       )
+                     )
+            ))),
+            fluidRow(tags$hr(),width=12),
             br(),
+            #### DML ####
+            fluidRow(width = 12, box(title = 'DML for Causal Analysis', width = 12, collapsible = T,
             fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionBttn("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
             fluidRow(conditionalPanel(
               condition = "input.dml > 0",
@@ -153,7 +245,7 @@ dml_outcome <- tabPanel(
                      tabPanel('ATE DT', dataTableOutput("ATE")),
                      tabPanel('Model Summary DT', dataTableOutput("plr"))
               )
-            ))
+            ))))
             
   ))
 
