@@ -54,6 +54,129 @@ render_dml_tab <-
       
     })
     
+    #### Exploratory Graph Functions/Functionality ####
+    # Function to update selected x variables
+    # Function to update selected x variables
+    update_selected_x_vars <- function() {
+      # Update selected x variables
+      global$selected_x_vars <- lapply(input$x_sel, function(x_var) {
+        list(name = x_var, type = get_variable_type(global_dat[[x_var]]))
+      })
+    }
+    
+    # Observer to update counts and selected x variables
+    observeEvent(input$x_sel, {
+      req(input$x_sel)  # Require selection of x variables
+      
+      # Update selected x variables
+      update_selected_x_vars()
+      
+      # Calculate counts based on selected x variables
+      binary_count <- sum(sapply(global$selected_x_vars, function(var) var$type == "binary"))
+      continuous_count <- sum(sapply(global$selected_x_vars, function(var) var$type == "continuous"))
+      string_count <- sum(sapply(global$selected_x_vars, function(var) var$type == "string"))
+      
+      # Update global counts
+      global$binary_count <- binary_count
+      global$continuous_count <- continuous_count
+      global$string_count <- string_count
+      
+      # Print counts to console
+      cat("Binary count:", global$binary_count, "\n")
+      cat("Continuous count:", global$continuous_count, "\n")
+      cat("String count:", global$string_count, "\n")
+    })
+    
+    output$binary_count <- renderText({
+      paste("Binary (", global$binary_count, ")")
+    })
+    
+    output$continuous_count <- renderText({
+      paste('Continuous (', global$continuous_count, ')')
+    })
+    
+    output$string_count <- renderText({
+      paste("String (", global$string_count, ")")
+    })
+    
+    output$binary_plots <- renderUI({
+      binary_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "binary", input$x_sel)  # Filter binary variables
+      plot_output_list <- lapply(binary_x_vars, function(x_var) {
+        plotname <- paste("plot", x_var, sep = "_")
+        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each binary variable
+      })
+      
+      do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
+    })
+    
+    output$continuous_plots <-  renderUI({
+      continuous_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "continuous", input$x_sel)  # Filter continuous variables
+      plot_output_list <- lapply(continuous_x_vars, function(x_var) {
+        plotname <- paste("plot", x_var, sep = "_")
+        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each continuous variable
+      })
+      
+      do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
+    })
+    
+    output$string_plots <- renderUI({
+      string_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "string", input$x_sel)  # Filter string variables
+      plot_output_list <- lapply(string_x_vars, function(x_var) {
+        plotname <- paste("plot", x_var, sep = "_")
+        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each string variable
+      })
+      
+      do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
+    })
+    
+    observe({
+      req(input$y_sel, input$x_sel)  # Require selection of y and x variables
+      
+      lapply(input$x_sel, function(x_var) {
+        output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({  # Render plot for each selected x variable
+          if (is.factor(global_dat[[x_var]]) || is.factor(global_dat[[input$y_sel]])) {  # Check if either x or y variable is a factor
+            if (input$group_var == 'None selected') {  # If no grouping variable selected
+              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel)) +  # Create boxplot without grouping
+                geom_boxplot() +
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel))
+            } else {
+              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  # Create boxplot with grouping
+                geom_boxplot() +
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring"))
+            }
+          } else {  # If neither x nor y variable is a factor (assumed to be continuous)
+            if (input$group_var == 'None selected') {  # If no grouping variable selected
+              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel)) +  # Create scatter plot without grouping
+                geom_point() + 
+                {
+                  if (input$regression)
+                    stat_smooth(
+                      method = "lm",se = F,
+                      linetype = "dashed",
+                      color = "red"
+                    ) 
+                } +
+              
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel))
+            } else {
+              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  # Create scatter plot with grouping
+                geom_point(alpha = .5) +
+                {
+                  if (input$regression)
+                    stat_smooth(method = "lm", se = F,linetype = 'dashed')
+                } +
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring"))
+            }
+          }
+          
+          
+          ggplotly(p)
+        })
+      })
+    })
+    
+    
+    
     #### Session info ####
     session_info <- reactive({
       session_info_data <- 
@@ -272,6 +395,7 @@ render_dml_tab <-
                    rowNames = FALSE)
       }
     )
+    
     
     
     
