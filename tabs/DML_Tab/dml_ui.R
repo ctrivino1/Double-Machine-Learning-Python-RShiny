@@ -92,7 +92,6 @@ css_body <- tags$head(
     
     
     
-    
     /* Additional JavaScript code for custom options */
     /* Add your custom JavaScript code here */
 
@@ -153,7 +152,7 @@ ppt <-  tags$iframe(
 #### UI Body ####
 
 dml_outcome <- tabPanel(
-  "Causation",
+  span('Causal Analysis Example', style = 'background-color: white; color: black; font-weight: bold;font-size: 13px;'),
   fluidPage(shinyjs::useShinyjs(),JS_UI_body, css_body,hidden_buttons,
             fluidRow(width=12,shinydashboardPlus::box(title = "APP Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
                                                       tabBox(id = 'overview_tabBox', 
