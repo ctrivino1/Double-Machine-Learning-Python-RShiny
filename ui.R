@@ -11,11 +11,10 @@ css_navbar <- tags$style(HTML('
         background-color: #28b78d !important;
     }
 
-    
 '))
 
 #### Nav Bar UI ####
-navbarPage(id = 'tabs', 'Causal Analysis Demo', dml_outcome,JS_navbar,css_navbar)
+navbarPage(id = 'tabs', span( "Causal Analysis App", style = "background-color: ##28b78d; color: white"), dml_outcome,JS_navbar,css_navbar)
 # colors: bs_theme(bg ='#2222', fg ='#F3F6F8',,success = '#00BC8C'  ) 
 
 
