@@ -17,12 +17,16 @@ library(glue)
 library(plotly)
 
 
+
 # logger output to make sure packes load
 logger::log_info('packages loaded')
 
 
 #### Global imported Data ####
-global_dat <- read_csv("401k_practice data.csv")
+global_dat <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
+
+
+
 
 
 #### Global reactive values ####
@@ -47,11 +51,15 @@ global <- reactiveValues(
 # Identify columns that contain strings or numeric values of 0 and 1
 string_or_binary_cols <- sapply(global_dat, function(x) is.character(x) || (is.numeric(x) && all(unique(x) %in% c(0, 1))))
 
+
 # Convert identified columns to factor columns
 global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], as.factor)
 
+
+
 # Function to classify variable types
 get_variable_type <- function(variable) {
+  print(variable)
   if ((is.factor(variable) && all(levels(variable) %in% c("0", "1"))) ||  # Check if factor with levels 0 and 1
       (is.numeric(variable) && all(variable %in% c(0, 1)))) {              # Check if numeric with values 0 and 1
     "binary"                                                               # Return "binary" if the conditions are met
