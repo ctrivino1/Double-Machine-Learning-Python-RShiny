@@ -155,10 +155,10 @@ ppt <-  tags$iframe(
 dml_outcome <- tabPanel(
   "Causation",
   fluidPage(shinyjs::useShinyjs(),JS_UI_body, css_body,hidden_buttons,
-            fluidRow(width=12,shinydashboardPlus::box(title = "Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
+            fluidRow(width=12,shinydashboardPlus::box(title = "APP Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
                                                       tabBox(id = 'overview_tabBox', 
-                                                             tabPanel('Overview', p(intro_text)),
-                                                             tabPanel('Methodology', p(methodology_text))
+                                                             tabPanel('DML Explanation', p(intro_text)),
+                                                             tabPanel('App Methodology', p(methodology_text))
                                                       ))),
             fluidRow(tags$hr(),width=12),
             br(),
