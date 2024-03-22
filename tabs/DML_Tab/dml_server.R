@@ -14,10 +14,7 @@ render_dml_tab <-
         text = "Please wait..."
       )
       if (is.null(input$treatments) && !is.na(input$n_treats)){
-        print("n_treatments")
-        print(input$n_treats)
-        test_global_dat <<- global_dat
-        py_dat <<- r_to_py(global_dat)
+        py_dat <- r_to_py(global_dat_python)
         
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
@@ -32,9 +29,9 @@ render_dml_tab <-
           
         #}
       }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
-        #print("treatment list given")
-        #print(input$treatments)
-        py_dat <- r_to_py(global_dat)
+        print("treatment list given")
+        print(input$treatments)
+        py_dat <- r_to_py(global_dat_python)
         py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
         
        # gets rid of duplicate treatments and keeps the treatment that is signficiant
@@ -236,7 +233,7 @@ render_dml_tab <-
         all_objects <- ls(envir = .GlobalEnv)
         
         # Exclude the variable 'global_dat'
-        objects_to_remove <- setdiff(all_objects, c('global_dat','render_dml_tab','global','dml_func'))
+        objects_to_remove <- setdiff(all_objects, c('global_dat','render_dml_tab','global','dml_func','global_dat_python'))
         
         # Remove all objects, except 'global_dat', from the global environment
         rm(list = objects_to_remove, envir = .GlobalEnv)
