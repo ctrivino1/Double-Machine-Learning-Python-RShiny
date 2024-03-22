@@ -16,7 +16,8 @@ render_dml_tab <-
       if (is.null(input$treatments) && !is.na(input$n_treats)){
         print("n_treatments")
         print(input$n_treats)
-        py_dat <- r_to_py(global_dat)
+        test_global_dat <<- global_dat
+        py_dat <<- r_to_py(global_dat)
         
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
