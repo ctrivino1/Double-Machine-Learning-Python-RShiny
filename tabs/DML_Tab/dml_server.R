@@ -55,7 +55,15 @@ render_dml_tab <-
     })
     
     #### Exploratory Graph Functions/Functionality ####
-    # Function to update selected x variables
+    # update the picker input selection based on input$group_var column
+    observeEvent(input$group_var, {
+      print("input$group_var")
+      print(input$groupPvar)
+      unique_values <- unique(global_dat[[input$group_var]])
+      print("unique values")
+      print(unique_values)
+      updatePickerInput(session, "group_var_values", choices = unique_values)
+    })
     # Function to update selected x variables
     update_selected_x_vars <- function() {
       # Update selected x variables
@@ -133,21 +141,35 @@ render_dml_tab <-
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
       
       lapply(input$x_sel, function(x_var) {
-        output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({  # Render plot for each selected x variable
-          if (is.factor(global_dat[[x_var]]) || is.factor(global_dat[[input$y_sel]])) {  # Check if either x or y variable is a factor
-            if (input$group_var == 'None selected') {  # If no grouping variable selected
-              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel)) +  # Create boxplot without grouping
+        output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({  
+          filtered_dat <- global_dat
+          
+          # Apply filter based on selected group values
+          if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
+            print("input$group_var")
+            print(input$group_var)
+            print("input$group_var_values")
+            print(input$group_var_values)
+            filtered_dat <- subset(filtered_dat, subset = (filtered_dat[, input$group_var] %in% as.list(input$group_var_values)))
+            
+          }
+          print("filtered dat ran")
+          print(filtered_dat %>% head())
+          
+          if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {  
+            if (input$group_var == 'None selected') {  
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel))
             } else {
-              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  # Create boxplot with grouping
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring"))
             }
-          } else {  # If neither x nor y variable is a factor (assumed to be continuous)
-            if (input$group_var == 'None selected') {  # If no grouping variable selected
-              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel)) +  # Create scatter plot without grouping
-                geom_point() + 
+          } else {  
+            if (input$group_var == 'None selected') {  
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
+                geom_point() +
                 {
                   if (input$regression)
                     stat_smooth(
@@ -156,10 +178,9 @@ render_dml_tab <-
                       color = "red"
                     ) 
                 } +
-              
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel))
             } else {
-              p <- ggplot(global_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  # Create scatter plot with grouping
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  
                 geom_point(alpha = .5) +
                 {
                   if (input$regression)
@@ -168,9 +189,10 @@ render_dml_tab <-
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring"))
             }
           }
-          
-          
           ggplotly(p)
+          # ggplotly(p) %>% 
+          #   plotly::config(displayModeBar = TRUE, displaylogo = FALSE, scrollZoom = FALSE, modeBarButtonsToRemove = list('toImage')) %>%
+          #   htmlwidgets::onRender('function(el, x) {$(el).parent().css({"height": "100%", "width": "100%"});}')
         })
       })
     })
