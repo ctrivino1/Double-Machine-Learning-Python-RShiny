@@ -241,6 +241,14 @@ def optimize_and_update_models_parallel_continuous(X_train, X_test, y_train, y_t
     return lasso_model, xgb_model, rf_model
 
 def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
+  print("data.dtypes")
+  print(data.dtypes)
+  ### In R the data is being changed to category and I need to change the categorical binary columns back to floats
+  category_cols = data.select_dtypes(include='category')
+  cols_to_convert = [col for col in category_cols.columns if set(data[col]) == {0, 1}]
+
+  # Then, convert the identified columns to floats
+  data[cols_to_convert] = data[cols_to_convert].astype(int)
   
   optuna.logging.set_verbosity(optuna.logging.WARNING)
   #print("treatments: ", treatments)
@@ -262,11 +270,10 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
     string_treatments_dummies.extend(treatment_dummies.columns.tolist())
   
   data = pd.get_dummies(data,sparse=True)
+  print("pd.get_dummies")
   
   #data = pd.get_dummies(data,sparse=True)
   data = data.apply(lambda col: pd.to_numeric(col, errors='coerce')).astype(float)
-  print("data: ",data.head())
-  print("data types", data.dtypes)
   np.random.seed(123)
   #### checing to see if data has NA values
   columns_w_nan = data.columns[data.isna().any()].tolist()
@@ -393,17 +400,18 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       np.random.seed(123)
       dml_plr_lasso = dml.DoubleMLPLR(data_dml_base,
                                 ml_l = log_reg_class_model,
-                                ml_m = LassoCV(n_jobs=-1,random_state=42),
+                                ml_m = LassoCV(n_jobs=-1,random_state=42,cv=5,max_iter=1000000,tol = 1e-2,verbose=False),
                                 n_folds = 3)
 
       dml_plr_lasso.fit(store_predictions=True)
       lasso_summary = dml_plr_lasso.summary
+      
       plr_summary = pd.concat((lasso_summary, forest_summary, boost_summary))
       index_values = ['lasso', 'forest', 'xgboost']
 
       m = [item for item in index_values for _ in range(len(continuous_treatments))]
       plr_summary['method'] = m
-      plr_smmary['type'] = 'continuous'
+      plr_summary['type'] = 'continuous'
       plr_summary = plr_summary.reset_index().rename(columns={"index": "treatment"})
       # Calculate the mean coefficient across methods for each treatment
       plr_summary['ATE']= None
@@ -470,10 +478,6 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       plr_summary = plr_summary.reset_index().rename(columns={"index": "treatment"})
       # Calculate the mean coefficient across methods for each treatment
       plr_summary['ATE']= None
-      #plr_summary['ATE'] = plr_summary.groupby('treatment').apply(lambda group: group['coef'].mean() if (group['P>|t|'] <= .05).all() else None).reset_index(drop=True)
-      #plr_summary['ATE']=  np.where((plr_summary['P>|t|'] <= 0.05).groupby(plr_summary['treatment']).transform('all'),
-                             # plr_summary.groupby('treatment')['coef'].transform('mean'),
-                              #None)
 
      
   
