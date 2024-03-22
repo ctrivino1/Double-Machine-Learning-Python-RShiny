@@ -265,6 +265,8 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
   
   #data = pd.get_dummies(data,sparse=True)
   data = data.apply(lambda col: pd.to_numeric(col, errors='coerce')).astype(float)
+  print("data: ",data.head())
+  print("data types", data.dtypes)
   np.random.seed(123)
   #### checing to see if data has NA values
   columns_w_nan = data.columns[data.isna().any()].tolist()
