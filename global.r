@@ -24,6 +24,7 @@ logger::log_info('packages loaded')
 
 #### Global imported Data ####
 global_dat <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
+global_dat_python <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
 
 
 
