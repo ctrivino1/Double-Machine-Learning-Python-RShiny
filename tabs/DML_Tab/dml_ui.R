@@ -218,8 +218,31 @@ dml_outcome <- tabPanel(
                          `none-selected-text` = "None selected"
                        ),
                        multiple = FALSE
-                     ), checkboxInput('regression',label = 'Add Regression Line',value = T)
-              )
+                     ), 
+                     conditionalPanel(
+                       condition = "input.group_var != 'None selected'",
+                       pickerInput(
+                         inputId = "group_var_values",
+                         label = "Select values",
+                         choices =  NULL,
+                         options = list(
+                           `actions-box` = TRUE,
+                           `live-search` = TRUE,
+                           `selected-text-format` = "count > 3",
+                           `count-selected-text` = "{0} items selected",
+                           `deselect-all-text` = "Clear All",
+                           `select-all-text` = "Select All",
+                           `none-selected-text` = "None selected"
+                         ),
+                         multiple = TRUE
+                       )
+                     )), column(width = 2,
+                               checkboxInput(
+                                 inputId = "regression",
+                                 label = "Add regression line",
+                                 value = T
+                               )
+                     )
             ),
                      fluidRow(width = 12,shinydashboardPlus::box( width = 12,
                        tags$div(
