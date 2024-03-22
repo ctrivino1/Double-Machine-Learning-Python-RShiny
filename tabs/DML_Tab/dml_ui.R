@@ -153,123 +153,178 @@ ppt <-  tags$iframe(
 
 dml_outcome <- tabPanel(
   span('Causal Analysis Example', style = 'background-color: white; color: black; font-weight: bold;font-size: 13px;'),
-  fluidPage(shinyjs::useShinyjs(),JS_UI_body, css_body,hidden_buttons,
-            fluidRow(width=12,shinydashboardPlus::box(title = "APP Overview",collapsible = TRUE,width=12,  # Change "info" to the color you prefer
-                                                      tabBox(id = 'overview_tabBox', 
-                                                             tabPanel('Double Machine Learning', p(intro_text)),
-                                                             tabPanel('App Methodology', p(methodology_text))
-                                                      ))),
-            fluidRow(tags$hr(),width=12),
-            br(),
-            fluidRow(shinydashboardPlus::box( title = 'DML Powerpoint Explanation',collapsible = T,width = 12,
-                                              ppt
-                                              
-            )),
-            fluidRow(tags$hr()),
-            #####data exploration######
-            fluidRow(width = 12, box(title = 'Explore the Data', collapsible = T, width = 12,
-            fluidRow(
-              column(width = 2, # Adjust the width as needed
-                     pickerInput(
-                       inputId = "y_sel",
-                       label = "Select y variable",
-                       choices = names(global_dat),
-                       options = list(
-                         `actions-box` = TRUE,
-                         `live-search` = TRUE,
-                         `selected-text-format` = "count > 3",
-                         `count-selected-text` = "{0} items selected",
-                         `deselect-all-text` = "Clear All",
-                         `select-all-text` = "Select All",
-                         `none-selected-text` = "None selected"
-                       ),
-                       multiple = FALSE
-                     )
+  fluidPage(
+    shinyjs::useShinyjs(),
+    JS_UI_body,
+    css_body,
+    hidden_buttons,
+    fluidRow(
+      width = 12,
+      shinydashboardPlus::box(
+        title = "APP Overview",
+        collapsible = TRUE,
+        width = 12,
+        tabBox(
+          id = 'overview_tabBox', 
+          tabPanel('Double Machine Learning', p(intro_text)),
+          tabPanel('App Methodology', p(methodology_text))
+        )
+      )
+    ),
+    fluidRow(tags$hr(), width = 12),
+    br(),
+    fluidRow(
+      shinydashboardPlus::box(
+        title = 'DML Powerpoint Explanation',
+        collapsible = TRUE,
+        width = 12,
+        ppt
+      )
+    ),
+    fluidRow(tags$hr()),
+    ##### Data exploration #####
+    fluidRow(
+      width = 12,
+      box(
+        title = 'Explore the Data',
+        collapsible = TRUE,
+        width = 12,
+        fluidRow(
+          column(
+            width = 2,
+            pickerInput(
+              inputId = "y_sel",
+              label = "Select y variable",
+              choices = names(global_dat),
+              options = list(
+                `actions-box` = TRUE,
+                `live-search` = TRUE,
+                `selected-text-format` = "count > 3",
+                `count-selected-text` = "{0} items selected",
+                `deselect-all-text` = "Clear All",
+                `select-all-text` = "Select All",
+                `none-selected-text` = "None selected"
               ),
-              column(width = 2, # Adjust the width as needed
-                     pickerInput(
-                       inputId = "x_sel",
-                       label = "Select x variables",
-                       choices = names(global_dat),
-                       options = list(
-                         `actions-box` = TRUE,
-                         `live-search` = TRUE,
-                         `selected-text-format` = "count > 3",
-                         `count-selected-text` = "{0} items selected",
-                         `deselect-all-text` = "Clear All",
-                         `select-all-text` = "Select All",
-                         `none-selected-text` = "None selected"
-                       ),
-                       multiple = TRUE
-                     )
+              multiple = FALSE
+            )
+          ),
+          column(
+            width = 2,
+            pickerInput(
+              inputId = "x_sel",
+              label = "Select x variables",
+              choices = names(global_dat),
+              options = list(
+                `actions-box` = TRUE,
+                `live-search` = TRUE,
+                `selected-text-format` = "count > 3",
+                `count-selected-text` = "{0} items selected",
+                `deselect-all-text` = "Clear All",
+                `select-all-text` = "Select All",
+                `none-selected-text` = "None selected"
               ),
-              column(width = 2, # Adjust the width as needed
-                     pickerInput(
-                       inputId = "group_var",
-                       label = "Select group variable for color",
-                       choices = c('None selected', names(global_dat)[sapply(global_dat, is.factor) | sapply(global_dat, function(x) get_variable_type(x) == "binary")]),
-                       options = list(
-                         `actions-box` = TRUE,
-                         `live-search` = TRUE,
-                         `selected-text-format` = "count > 3",
-                         `count-selected-text` = "{0} items selected",
-                         `deselect-all-text` = "Clear All",
-                         `select-all-text` = "Select All",
-                         `none-selected-text` = "None selected"
-                       ),
-                       multiple = FALSE
-                     ), 
-                     conditionalPanel(
-                       condition = "input.group_var != 'None selected'",
-                       pickerInput(
-                         inputId = "group_var_values",
-                         label = "Select values",
-                         choices =  NULL,
-                         options = list(
-                           `actions-box` = TRUE,
-                           `live-search` = TRUE,
-                           `selected-text-format` = "count > 3",
-                           `count-selected-text` = "{0} items selected",
-                           `deselect-all-text` = "Clear All",
-                           `select-all-text` = "Select All",
-                           `none-selected-text` = "None selected"
-                         ),
-                         multiple = TRUE
-                       )
-                     )), column(width = 2,
-                               checkboxInput(
-                                 inputId = "regression",
-                                 label = "Add regression line",
-                                 value = T
-                               )
-                     )
-            ),
-                     fluidRow(width = 12,shinydashboardPlus::box( width = 12,
-                       tags$div(
-                         class = "custom-tab-scrollbar",
-                         tabBox(width = 12,
-                           tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
-                           tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")),
-                           tabPanel(textOutput('string_count'), uiOutput("string_plots")),
-                           id = "tabset1"
-                         )
-                       )
-                     )
-            ))),
-            fluidRow(tags$hr(),width=12),
-            br(),
-            #### DML ####
-            fluidRow(width = 12, box(title = 'DML for Causal Analysis', width = 12, collapsible = T,
-            fluidRow(column(4,selectInput('outcome','Target Variable',selected = 'net_tfa', names(global_dat), multiple = F)), column(4,selectInput('treatments','Treatment Variables',names(global_dat), multiple = T))),fluidRow(column(4,numericInput('n_treats','top_n_treatments',value=NULL,min=1,max=100))),fluidRow(column(4,actionBttn("dml", "Calculate", style = "fill", color = "success"))),tags$hr(),
-            fluidRow(conditionalPanel(
-              condition = "input.dml > 0",
-              tabBox(id = "ppt_tabBox", title = 'Data Tables', width = 6,
-                     tabPanel('ATE DT', dataTableOutput("ATE")),
-                     tabPanel('Model Summary DT', dataTableOutput("plr"))
+              multiple = TRUE
+            )
+          ),
+          column(
+            width = 2,
+            pickerInput(
+              inputId = "group_var",
+              label = "Select group variable for color",
+              choices = c('None selected', names(global_dat)[sapply(global_dat, is.factor) | sapply(global_dat, function(x) get_variable_type(x) == "binary")]),
+              options = list(
+                `actions-box` = TRUE,
+                `live-search` = TRUE,
+                `selected-text-format` = "count > 3",
+                `count-selected-text` = "{0} items selected",
+                `deselect-all-text` = "Clear All",
+                `select-all-text` = "Select All",
+                `none-selected-text` = "None selected"
+              ),
+              multiple = FALSE
+            ), 
+            conditionalPanel(
+              condition = "input.group_var != 'None selected'",
+              pickerInput(
+                inputId = "group_var_values",
+                label = "Select values",
+                choices =  NULL,
+                options = list(
+                  `actions-box` = TRUE,
+                  `live-search` = TRUE,
+                  `selected-text-format` = "count > 3",
+                  `count-selected-text` = "{0} items selected",
+                  `deselect-all-text` = "Clear All",
+                  `select-all-text` = "Select All",
+                  `none-selected-text` = "None selected"
+                ),
+                multiple = TRUE
               )
-            ))))
-            
-  ))
+            )
+          ),
+          column(
+            width = 2,
+            checkboxInput(
+              inputId = "regression",
+              label = "Add regression line",
+              value = TRUE
+            )
+          )
+        ),
+        fluidRow(
+          width = 12,
+          shinydashboardPlus::box(
+            width = 12,
+            tags$div(
+              class = "custom-tab-scrollbar",
+              tabBox(
+                width = 12,
+                tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
+                tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")),
+                tabPanel(textOutput('string_count'), uiOutput("string_plots")),
+                id = "tabset1"
+              )
+            )
+          )
+        )
+      )
+    ),
+    fluidRow(tags$hr(), width = 12),
+    br(),
+    #### DML ####
+    fluidRow(
+      width = 12,
+      box(
+        title = 'DML for Causal Analysis',
+        width = 12,
+        collapsible = TRUE,
+        fluidRow(
+          column(4, selectInput('outcome', 'Target Variable', selected = 'net_tfa', names(global_dat), multiple = FALSE)),
+          column(4, selectInput('treatments', 'Treatment Variables', names(global_dat), multiple = TRUE))
+        ),
+        fluidRow(
+          column(4, numericInput('n_treats', 'top_n_treatments', value = NULL, min = 1, max = 100))
+        ),
+        fluidRow(
+          column(4, actionBttn("dml", "Calculate", style = "fill", color = "success"))
+        ),
+        tags$hr(),
+        fluidRow(
+          conditionalPanel(
+            condition = "input.dml > 0",
+            tabBox(
+              id = "ppt_tabBox",
+              title = 'Data Tables',
+              width = 6,
+              tabPanel('ATE DT', dataTableOutput("ATE")),
+              tabPanel('Model Summary DT', dataTableOutput("plr"))
+            )
+          )
+        )
+      )
+    )
+  )
+)
 
 #### Notes ####
 
