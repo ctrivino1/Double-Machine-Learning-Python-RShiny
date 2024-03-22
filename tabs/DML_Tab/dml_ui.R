@@ -217,7 +217,7 @@ dml_outcome <- tabPanel(
               options = list(
                 `actions-box` = TRUE,
                 `live-search` = TRUE,
-                `selected-text-format` = "count > 3",
+                `selected-text-format` = "count > 2",
                 `count-selected-text` = "{0} items selected",
                 `deselect-all-text` = "Clear All",
                 `select-all-text` = "Select All",
@@ -235,7 +235,6 @@ dml_outcome <- tabPanel(
               options = list(
                 `actions-box` = TRUE,
                 `live-search` = TRUE,
-                `selected-text-format` = "count > 3",
                 `count-selected-text` = "{0} items selected",
                 `deselect-all-text` = "Clear All",
                 `select-all-text` = "Select All",
