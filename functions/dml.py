@@ -345,6 +345,7 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
       np.random.seed(123)
       print("Binary treatments with binary outcome")
       ml_g = xgb_classifcation(X_train, X_test, y_train, y_test)
+      print("ml_g worked")
     else:
       np.random.seed(123)
       print("Binary treatments with continuous outcome")
@@ -361,6 +362,8 @@ def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
    
     classifier_plr_summary =  pd.concat(test_list, ignore_index=True)
     classifier_plr_summary['method'] = 'xgb_classifier'
+    print('classifier_plr_summary')
+    print(classifier_plr_summary)
     
    
   if continuous_treatments:

@@ -10,7 +10,7 @@ render_dml_tab <-
       print("button clicked")
       show_modal_spinner(
         spin = "cube-grid",
-        color = "firebrick",
+        color = "#28b78d",
         text = "Please wait..."
       )
       if (is.null(input$treatments) && !is.na(input$n_treats)){
@@ -23,7 +23,7 @@ render_dml_tab <-
           filter1 <- subset(py_result[[1]], Significant != 'FALSE')
           global$ATE_summary  <-subset(filter1, ATE != 'NULL')
           global$plr_summary <- py_result[[2]]
-          update_modal_progress(1)
+          
           remove_modal_spinner()
           
           
