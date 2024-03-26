@@ -55,13 +55,11 @@ render_dml_tab <-
     #### Exploratory Graph Functions/Functionality ####
     # update the picker input selection based on input$group_var column
     observeEvent(input$group_var, {
-      print("input$group_var")
-      print(input$groupPvar)
-      unique_values <- unique(global_dat[[input$group_var]])
-      print("unique values")
-      print(unique_values)
+      # lapply with the as.character gets rid of the factors 
+      unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
       updatePickerInput(session, "group_var_values", choices = unique_values)
     })
+    
     # Function to update selected x variables
     update_selected_x_vars <- function() {
       # Update selected x variables
@@ -134,6 +132,8 @@ render_dml_tab <-
       
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
     })
+    ## adding custom theme for ggplots
+    
     
     observe({
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
@@ -151,18 +151,17 @@ render_dml_tab <-
             filtered_dat <- subset(filtered_dat, subset = (filtered_dat[, input$group_var] %in% as.list(input$group_var_values)))
             
           }
-          print("filtered dat ran")
-          print(filtered_dat %>% head())
+          
           
           if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {  
             if (input$group_var == 'None selected') {  
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
                 geom_boxplot() +
-                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel))
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) 
             } else {
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  
                 geom_boxplot() +
-                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring"))
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) 
             }
           } else {  
             if (input$group_var == 'None selected') {  
@@ -176,7 +175,7 @@ render_dml_tab <-
                       color = "red"
                     ) 
                 } +
-                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel))
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) 
             } else {
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  
                 geom_point(alpha = .5) +
@@ -184,7 +183,7 @@ render_dml_tab <-
                   if (input$regression)
                     stat_smooth(method = "lm", se = F,linetype = 'dashed')
                 } +
-                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring"))
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring")) 
             }
           }
           ggplotly(p)
