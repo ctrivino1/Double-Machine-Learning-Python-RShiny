@@ -160,11 +160,13 @@ render_dml_tab <-
             if (input$group_var == 'None selected') {  
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
                 geom_boxplot() +
-                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) 
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) +
+                theme_bw()
             } else {
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  
                 geom_boxplot() +
-                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) 
+                ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
+                theme_bw()
             }
           } else {  
             if (input$group_var == 'None selected') {  
@@ -178,7 +180,8 @@ render_dml_tab <-
                       color = "red"
                     ) 
                 } +
-                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) 
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) +
+                theme_bw()
             } else {
               p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  
                 geom_point(alpha = .5) +
@@ -186,7 +189,8 @@ render_dml_tab <-
                   if (input$regression)
                     stat_smooth(method = "lm", se = F,linetype = 'dashed')
                 } +
-                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring")) 
+                ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
+                theme_bw()
             }
           }
           ggplotly(p) %>% 
