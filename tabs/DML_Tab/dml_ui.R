@@ -93,7 +93,24 @@ css_body <- tags$head(
     
     
     /* Additional JavaScript code for custom options */
-    /* Add your custom JavaScript code here */
+    /* CSS for fullscreen capability on the dynamic exploratory graphs*/
+    .plot-zoom {
+      position: absolute;
+      border: none;
+      background-color: white; /* Set the background color of the full screen button */
+      bottom: 0;
+      right: 0;
+      }
+  
+    .full-screen {
+        position: fixed;
+        height: 98vh !important;
+        width: 98vw !important;
+        left: 0;
+        top: 0;
+        z-index: 9999;
+        overflow: hidden;
+        }
 
     
     
@@ -107,34 +124,70 @@ hidden_buttons <- conditionalPanel('false',verbatimTextOutput("globalenv"),downl
 
 
 #### JS UI Body ####
-JS_UI_body <- tags$script(HTML(
-  "
-        // JavaScript function to handle box minimization
-        $(document).on('click', '.box-header .fa-minus', function() {
-          var box = $(this).parents('.box').first();
-          box.find('.box-body, .box-footer').slideUp();
-          box.find('.box-header .fa-minus').removeClass('fa-minus').addClass('fa-plus');
-        });
+jss_body <- tags$head(
+  tags$style(HTML("
+    // put style tags here
+  ")),
+  tags$script(HTML("
+    // Function to toggle full-screen mode for a plot
+    function plotZoom(el) {
+        el = $(el); // Convert the element to jQuery object
+        var parent = el.parent().parent(); // Get the parent container of the plot
         
-        // JavaScript function to handle box restoration
-        $(document).on('click', '.box-header .fa-plus', function() {
-          var box = $(this).parents('.box').first();
-          box.find('.box-body, .box-footer').slideDown();
-          box.find('.box-header .fa-plus').removeClass('fa-plus').addClass('fa-minus');
-        });
-        
-        // Code to automatically click the minimze options on all sections in the app that can be minimized
-        $(document).ready(function(){
+        // Check if the plot is currently not in full-screen mode
+        if (el.attr('data-full_screen') === 'false') {
+            // Add the full-screen class to the parent container, trigger a resize event,
+            // and fade out and fade in to apply the changes smoothly
+            parent.addClass('full-screen').trigger('resize').fadeOut().fadeIn();
+            el.attr('data-full_screen', 'true'); // Update the attribute to indicate full-screen mode
+        } else {
+            // Remove the full-screen class from the parent container, trigger a resize event,
+            // and fade out and fade in to apply the changes smoothly
+            parent.removeClass('full-screen').trigger('resize').fadeOut().fadeIn();
+            el.attr('data-full_screen', 'false'); // Update the attribute to indicate non full-screen mode
+        }
+    }
+
+    // jQuery function to append the full-screen button to plotly plots
+    $(function() {
+        // Select all plotly plots within elements with class 'plotly-full-screen' and class 'plotly.html-widget'
+        $('.plotly-full-screen .plotly.html-widget').append(
+            // Append HTML content for the full-screen button
+            `
+            <div style='position: relative;'>
+                <button onclick=plotZoom(this) class='plot-zoom' data-full_screen='false' title='Full screen'>
+                    <i class='fa fa-expand-arrows-alt'></i>
+                </button>
+            </div>
+            `
+        );
+    });
+
+    // JavaScript function to handle box minimization
+    $(document).on('click', '.box-header .fa-minus', function() {
+        var box = $(this).parents('.box').first();
+        box.find('.box-body, .box-footer').slideUp();
+        box.find('.box-header .fa-minus').removeClass('fa-minus').addClass('fa-plus');
+    });
+
+    // JavaScript function to handle box restoration
+    $(document).on('click', '.box-header .fa-plus', function() {
+        var box = $(this).parents('.box').first();
+        box.find('.box-body, .box-footer').slideDown();
+        box.find('.box-header .fa-plus').removeClass('fa-plus').addClass('fa-minus');
+    });
+
+    // Code to automatically click the minimize options on all sections in the app that can be minimized
+    $(document).ready(function(){
         // Simulate a click on the collapse button
         $('.box-header .fa-minus').click();
-});
-        
-        // Additional JavaScript code for custom options
-        // Add your custom JavaScript code here
-        
-        
-        
-        "))
+    });
+
+    // Additional JavaScript code for custom options
+    // Add your custom JavaScript code here
+  "))
+)
+
 
 
 #### Google Slides PPT ####
@@ -155,9 +208,10 @@ dml_outcome <- tabPanel(
   span('Causal Analysis Example', style = 'background-color: white; color: black; font-weight: bold;font-size: 13px;'),
   fluidPage(
     shinyjs::useShinyjs(),
-    JS_UI_body,
+    jss_body,
     css_body,
     hidden_buttons,
+    htmltools::htmlDependencies(icon("")),
     fluidRow(
       width = 12,
       shinydashboardPlus::box(
