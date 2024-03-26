@@ -325,13 +325,11 @@ dml_outcome <- tabPanel(
           )
         ),
         fluidRow(
-          width = 12,
-          shinydashboardPlus::box(
+          column(
             width = 12,
             tags$div(
               class = "custom-tab-scrollbar",
               tabBox(
-                width = 12,
                 tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
                 tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")),
                 tabPanel(textOutput('string_count'), uiOutput("string_plots")),
