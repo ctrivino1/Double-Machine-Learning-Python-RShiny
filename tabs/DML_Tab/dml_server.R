@@ -132,7 +132,7 @@ render_dml_tab <-
       
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
     })
-    ## adding custom theme for ggplots
+    
     
     
     observe({
