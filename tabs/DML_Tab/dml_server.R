@@ -107,7 +107,8 @@ render_dml_tab <-
       binary_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "binary", input$x_sel)  # Filter binary variables
       plot_output_list <- lapply(binary_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
-        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each binary variable
+        plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
+        div(style = "margin-bottom: 10px;", plot_output)
       })
       
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
@@ -117,7 +118,8 @@ render_dml_tab <-
       continuous_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "continuous", input$x_sel)  # Filter continuous variables
       plot_output_list <- lapply(continuous_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
-        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each continuous variable
+        plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
+        div(style = "margin-bottom: 20px;", plot_output)
       })
       
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
@@ -127,7 +129,8 @@ render_dml_tab <-
       string_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "string", input$x_sel)  # Filter string variables
       plot_output_list <- lapply(string_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
-        plotlyOutput(plotname, height = '300px',width = '70%')  # Create plot output for each string variable
+        plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
+        div(style = "margin-bottom: 5px;", plot_output)
       })
       
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
@@ -186,10 +189,13 @@ render_dml_tab <-
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring")) 
             }
           }
-          ggplotly(p)
-          # ggplotly(p) %>% 
-          #   plotly::config(displayModeBar = TRUE, displaylogo = FALSE, scrollZoom = FALSE, modeBarButtonsToRemove = list('toImage')) %>%
-          #   htmlwidgets::onRender('function(el, x) {$(el).parent().css({"height": "100%", "width": "100%"});}')
+          ggplotly(p) %>% 
+            plotly::config(displayModeBar = TRUE, displaylogo = FALSE, scrollZoom = TRUE, modeBarButtonsToRemove = list('toImage')) %>%
+            htmlwidgets::onRender('function(el, x) {
+          $(el).parent().css({"height": "100%", "width": "100%"});
+          var buttonHtml = "<div style=\'position: relative;\'><button onclick=plotZoom(this) class=\'plot-zoom\' data-full_screen=\'false\' title=\'Full screen\' style=\'position: absolute;bottom: 3px; right: 3px;\'><i class=\'fa fa-expand-arrows-alt\'></i></button></div>";
+    $(el).append(buttonHtml);
+        }')
         })
       })
     })
