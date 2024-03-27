@@ -83,13 +83,14 @@ css_body <- tags$head(
     font-size: 20px;
     }
     
-    /* creating a class to add a scroll bar to the contents displayed in tabs */
+    /* creating a class '.custom-tab-scrollbar' to add a scroll bar to the contents displayed in tabs */
     .custom-tab-scrollbar {
     height: 50vh;
     overflow-y: auto;
     padding: 10px;
     }
     
+    /* creating a class name '.full_screen' */
     .full-screen {
             position: fixed;
             height: 98vh !important;
@@ -173,7 +174,6 @@ dml_outcome <- tabPanel(
     jss_body,
     css_body,
     hidden_buttons,
-    htmltools::htmlDependencies(icon("")),
     fluidRow(
       width = 12,
       shinydashboardPlus::box(
