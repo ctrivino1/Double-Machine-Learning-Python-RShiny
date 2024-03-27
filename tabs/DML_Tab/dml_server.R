@@ -151,8 +151,7 @@ render_dml_tab <-
             print(input$group_var)
             print("input$group_var_values")
             print(input$group_var_values)
-            filtered_dat <- subset(filtered_dat, subset = (filtered_dat[, input$group_var] %in% as.list(input$group_var_values)))
-            
+            filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
           }
           
           
