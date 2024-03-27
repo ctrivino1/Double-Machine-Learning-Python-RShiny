@@ -192,13 +192,17 @@ render_dml_tab <-
                 theme_bw()
             }
           }
-          ggplotly(p) %>% 
-            plotly::config(displayModeBar = TRUE, displaylogo = FALSE, scrollZoom = TRUE, modeBarButtonsToRemove = list('toImage')) %>%
-            htmlwidgets::onRender('function(el, x) {
-          $(el).parent().css({"height": "100%", "width": "100%"});
-          var buttonHtml = "<div style=\'position: relative;\'><button onclick=plotZoom(this) class=\'plot-zoom\' data-full_screen=\'false\' title=\'Full screen\' style=\'position: absolute;bottom: 3px; right: 3px;\'><i class=\'fa fa-expand-arrows-alt\'></i></button></div>";
-    $(el).append(buttonHtml);
-        }')
+          
+          p <- ggplotly(p)
+          
+          p <- config(
+            p,
+            modeBarButtonsToAdd = list(
+              list(button_fullscreen(), button_download(p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()))
+            ),
+            modeBarButtonsToRemove = c("toImage", "hoverClosest","hoverCompare"),
+            displaylogo = FALSE
+          )
         })
       })
     })
@@ -454,8 +458,8 @@ render_dml_tab <-
     
   
 
-    #### PPT Full Screen Capability ####
-    observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
+    #### PPT Full Screen Capability #### look at dml_ui notes at bottom of script
+    #observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
     
     }
 
