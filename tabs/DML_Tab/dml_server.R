@@ -196,7 +196,7 @@ render_dml_tab <-
           p <- ggplotly(p)
           
           p <- config(
-            p,
+            p,scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
               list(button_fullscreen(), button_download(p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()))
             ),
