@@ -61,12 +61,14 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 
 # Function to classify variable types
 get_variable_type <- function(variable) {
-  if ((is.factor(variable) && all(levels(variable) %in% c("0", "1"))) ||  # Check if factor with levels 0 and 1
-      (is.numeric(variable) && all(variable %in% c(0, 1)))) {              # Check if numeric with values 0 and 1
-    "binary"                                                               # Return "binary" if the conditions are met
-  } else if (is.factor(variable)) {                                       
-    "string"                                                                # Return "string" if the variable is a factor but not binary
+  variable <- as.character(variable)
+  if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
+    "binary"                                                              
+  } else if (is.numeric(variable) && all(unique(variable) %in% c(0, 1)) && length(unique(variable)) == 2) {              
+    "binary"                                                              
+  } else if (any(grepl("[a-zA-Z]", variable))) {                                       
+    "string"                                                                                   
   } else {
-    "continuous"                                                            # Return "continuous" if the variable is numeric but not binary
+    "continuous"                                                           
   }
 }
