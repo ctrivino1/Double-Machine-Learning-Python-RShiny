@@ -138,9 +138,7 @@ dirty_csv <- function(data) {
   ) |> paste0(collapse = "\n") |> utils::URLencode(reserved = TRUE)
 }
 
-button_download <- function(data,plot_name) {
-  print("plot name")
-  print(plot_name)
+button_download <- function(data, plot_name) {
   list(
     name = "datacsv",
     title = "Download plot data as csv",
@@ -149,12 +147,16 @@ button_download <- function(data,plot_name) {
       transform = 'matrix(1 0 0 1 0 0) scale(0.03125)'
     ),
     click = dirty_js(
-      "function(gd, ev) {
-         var el = document.createElement('a');
-         el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
-         el.setAttribute('download', 'plot_data.csv');
-         el.click();
-      }" |> sprintf(dirty_csv(data))
+      sprintf(
+        "function(gd, ev) {
+           var el = document.createElement('a');
+           el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
+           el.setAttribute('download', '%s.csv');  // Use plot_name variable here for renaming the file
+           el.click();
+        }",
+        dirty_csv(data),
+        plot_name  # Use plot_name variable here for renaming the file
+      )
     )
   )
 }

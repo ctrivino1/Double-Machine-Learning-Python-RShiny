@@ -209,7 +209,7 @@ render_dml_tab <-
           p <- config(
             p,scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
-              list(button_fullscreen(), button_download(p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()),plot_name = 'test')
+              list(button_fullscreen(), button_download(data= p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]](),plot_name = glue('{input$y_sel}_vs_{input$x_sel_data}')))
             ),
             modeBarButtonsToRemove = c("toImage", "hoverClosest","hoverCompare"),
             displaylogo = FALSE
