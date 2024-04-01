@@ -15,6 +15,7 @@ library(openxlsx)
 library(lubridate)
 library(glue)
 library(plotly)
+library(shinycssloaders)
 
 
 
@@ -25,6 +26,7 @@ logger::log_info('packages loaded')
 
 #### Global imported Data ####
 global_dat <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
+global_dat$row_id <- seq_len(nrow(global_dat))
 global_dat_python <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
 
 
@@ -60,16 +62,27 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 
 
 # Function to classify variable types
+### need to fix this
 get_variable_type <- function(variable) {
   variable <- as.character(variable)
+  print(variable)
+  
+  # Check if variable contains only "0" and "1" characters
   if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
-    "binary"                                                              
-  } else if (is.numeric(variable) && all(unique(variable) %in% c(0, 1)) && length(unique(variable)) == 2) {              
-    "binary"                                                              
-  } else if (any(grepl("[a-zA-Z]", variable))) {                                       
-    "string"                                                                                   
+    return("binary")                                                              
+  }  else if (all(grepl("[0-9]", variable, fixed = TRUE)) && !all(grepl("[a-zA-Z]", variable))) { 
+    # Check if variable contains only numeric characters
+    return("continuous")                                                           
+  } else if (!all(is.na(as.numeric(variable)))) {
+    # Check if variable can be converted to numeric
+    return("continuous")
   } else {
-    "continuous"                                                           
+    # Check if variable contains alphanumeric characters
+    if (any(grepl("[a-zA-Z]", variable))) {
+      return("alphanumeric")
+    } else {
+      return("string")                                                                                   
+    }
   }
 }
 
@@ -125,7 +138,9 @@ dirty_csv <- function(data) {
   ) |> paste0(collapse = "\n") |> utils::URLencode(reserved = TRUE)
 }
 
-button_download <- function(data) {
+button_download <- function(data,plot_name) {
+  print("plot name")
+  print(plot_name)
   list(
     name = "datacsv",
     title = "Download plot data as csv",
