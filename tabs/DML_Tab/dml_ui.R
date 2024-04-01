@@ -247,7 +247,7 @@ dml_outcome <- tabPanel(
             pickerInput(
               inputId = "group_var",
               label = "Select group variable for color",
-              choices = c('None selected', names(global_dat)[sapply(global_dat, is.factor) | sapply(global_dat, function(x) get_variable_type(x) == "binary")]),
+              choices = c('None selected', names(global_dat)[sapply(global_dat, function(x) get_variable_type(x) == "binary") | sapply(global_dat, function(x) get_variable_type(x) == "string")]),
               options = list(
                 `actions-box` = TRUE,
                 `live-search` = TRUE,
@@ -288,17 +288,17 @@ dml_outcome <- tabPanel(
         ),
         fluidRow(
           column(
-            width = 12,
+            width = 7,
             tags$div(
               class = "custom-tab-scrollbar",
-              tabBox(
-                tabPanel(textOutput('binary_count'), uiOutput("binary_plots")),
-                tabPanel(textOutput('continuous_count'), uiOutput("continuous_plots")),
-                tabPanel(textOutput('string_count'), uiOutput("string_plots")),
+              tabBox(width = '100%',
+                tabPanel(textOutput('binary_count'), withSpinner(uiOutput("binary_plots"),color = '#28b78d')),
+                tabPanel(textOutput('continuous_count'), withSpinner(uiOutput("continuous_plots"),color = '#28b78d')),
+                tabPanel(textOutput('string_count'), withSpinner(uiOutput("string_plots"),color = '#28b78d')),
                 id = "tabset1"
               )
             )
-          )
+          ),column(width=5,  DTOutput("data_table"))
         )
       )
     ),
