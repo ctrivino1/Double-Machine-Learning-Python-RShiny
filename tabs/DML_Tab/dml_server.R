@@ -54,10 +54,19 @@ render_dml_tab <-
     
     #### Exploratory Graph Functions/Functionality ####
     # update the picker input selection based on input$group_var column
+    # observeEvent(input$group_var, {
+    #   # lapply with the as.character gets rid of the factors
+    #   unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
+    #   updatePickerInput(session, "group_var_values", choices = unique_values)
+    # })
     observeEvent(input$group_var, {
-      # lapply with the as.character gets rid of the factors 
-      unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
-      updatePickerInput(session, "group_var_values", choices = unique_values)
+      if (input$group_var == "None selected") {
+        updatePickerInput(session, "group_var_values", selected = "None selected")
+      } else {
+        # lapply with the as.character gets rid of the factors
+        unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
+        updatePickerInput(session, "group_var_values", choices = unique_values)
+      }
     })
     
     # Function to update selected x variables
@@ -140,36 +149,38 @@ render_dml_tab <-
     
     observe({
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
-      
+
       lapply(input$x_sel, function(x_var) {
-        output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({  
+        output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({
           filtered_dat <- global_dat
-          
+
+
           # Apply filter based on selected group values
           if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
-            print("input$group_var")
-            print(input$group_var)
-            print("input$group_var_values")
-            print(input$group_var_values)
+            # print("input$group_var")
+            # print(input$group_var)
+            # print("input$group_var_values")
+            # print(input$group_var_values)
             filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
+
           }
-          
-          
-          if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {  
-            if (input$group_var == 'None selected') {  
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
+
+
+          if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
+            if (input$group_var == 'None selected') {
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var)) +  
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var,customdata = 'row_id')) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
                 theme_bw()
             }
-          } else {  
-            if (input$group_var == 'None selected') {  
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +  
+          } else {
+            if (input$group_var == 'None selected') {
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
                 geom_point() +
                 {
                   if (input$regression)
@@ -177,12 +188,12 @@ render_dml_tab <-
                       method = "lm",se = F,
                       linetype = "dashed",
                       color = "red"
-                    ) 
+                    )
                 } +
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var))) +  
+              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var),customdata = 'row_id')) +
                 geom_point(alpha = .5) +
                 {
                   if (input$regression)
@@ -192,19 +203,72 @@ render_dml_tab <-
                 theme_bw()
             }
           }
-          
-          p <- ggplotly(p)
-          
+
+          p <- ggplotly(p,source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
+
           p <- config(
             p,scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
-              list(button_fullscreen(), button_download(p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()))
+              list(button_fullscreen(), button_download(p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()),plot_name = 'test')
             ),
             modeBarButtonsToRemove = c("toImage", "hoverClosest","hoverCompare"),
             displaylogo = FALSE
           )
+
         })
       })
+    })
+   
+    
+    #### exploration Data Table ####
+    
+    # Observe click event
+    selected_data <- reactiveVal(NULL)
+    # observeEvent(event_data("plotly_click"), {
+    #   click_data <- event_data("plotly_click")
+    #   if (!is.null(click_data)) {
+    #     point <- click_data[["pointNumber"]]
+    #     point_name <- rownames(click_data)[point + 1] # Add 1 to pointNumber because of 0-based indexing
+    #     selected_data(as.data.frame(c(selected_data(), point_name)) %>%select(-NA_character_.))
+    #     
+    #   }
+    # })
+    
+    observeEvent(event_data("plotly_deselect", source = 'plot1'), {
+      print('plotly_deselect')
+      selected_data(NULL)
+    })
+    
+    # Observe select event
+    # observeEvent(event_data("plotly_selected"), {
+    #   selected_data_indices <- event_data("plotly_selected")$pointNumber + 1
+    #   selected_rows <- global_dat[selected_data_indices, ]
+    #   selected_data(selected_rows)
+    # })
+    observeEvent(event_data("plotly_selected", source = "plot1"), {
+      click_data <<- event_data("plotly_selected", source = "plot1")
+      print('click_data')
+      print(click_data$customdata)
+      if (!is.null(click_data)) {
+        if (input$group_var == "None selected") {
+          
+          selected_data_indices <- click_data$pointNumber + 1
+          selected_rows <- global_dat[selected_data_indices, ]
+          selected_data(selected_rows)
+        } else  { 
+          result <- inner_join(global_dat, click_data, by = c("row_id" = "customdata"))
+          selected_data(result)
+        }
+      }
+    })
+    
+    # Output global_dat table
+    output$data_table <- renderDT({
+      if (!is.null(selected_data())) {
+        datatable(selected_data(), rownames = FALSE)
+      } else {
+        datatable(global_dat, rownames = FALSE)
+      }
     })
     
     
