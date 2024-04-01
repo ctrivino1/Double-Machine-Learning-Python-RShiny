@@ -65,8 +65,6 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 ### need to fix this
 get_variable_type <- function(variable) {
   variable <- as.character(variable)
-  print(variable)
-  
   # Check if variable contains only "0" and "1" characters
   if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
     return("binary")                                                              
@@ -138,7 +136,10 @@ dirty_csv <- function(data) {
   ) |> paste0(collapse = "\n") |> utils::URLencode(reserved = TRUE)
 }
 
+
 button_download <- function(data, plot_name) {
+  # Concatenate multiple plot names into a single string separated by underscores
+  
   list(
     name = "datacsv",
     title = "Download plot data as csv",
@@ -151,11 +152,11 @@ button_download <- function(data, plot_name) {
         "function(gd, ev) {
            var el = document.createElement('a');
            el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
-           el.setAttribute('download', '%s.csv');  // Use plot_name variable here for renaming the file
+           el.setAttribute('download', '%s.csv');
            el.click();
         }",
         dirty_csv(data),
-        plot_name  # Use plot_name variable here for renaming the file
+        plot_name  # Use the concatenated plot name
       )
     )
   )

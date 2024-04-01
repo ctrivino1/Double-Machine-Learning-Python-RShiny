@@ -18,30 +18,29 @@ render_dml_tab <-
         
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
-          
-          
-          filter1 <- subset(py_result[[1]], Significant != 'FALSE')
-          global$ATE_summary  <-subset(filter1, ATE != 'NULL')
-          global$plr_summary <- py_result[[2]]
-          
-          remove_modal_spinner()
-          
-          
+        
+        
+        filter1 <- subset(py_result[[1]], Significant != 'FALSE')
+        global$ATE_summary  <-subset(filter1, ATE != 'NULL')
+        global$plr_summary <- py_result[[2]]
+        
+        remove_modal_spinner()
+        
+        
         #}
       }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
         print("treatment list given")
-        print(input$treatments)
         py_dat <- r_to_py(global_dat_python)
         py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
         
-       # gets rid of duplicate treatments and keeps the treatment that is signficiant
+        # gets rid of duplicate treatments and keeps the treatment that is signficiant
         ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
         
-          global$ATE_summary  <- ate_sum
-          test <<- py_result[[1]]
-          print("ATE data")
-          print(global$ATE_summary)
-          global$plr_summary <- py_result[[2]]
+        global$ATE_summary  <- ate_sum
+        test <<- py_result[[1]]
+        print("ATE data")
+        print(global$ATE_summary)
+        global$plr_summary <- py_result[[2]]
         
         remove_modal_spinner()
       } else {
@@ -54,11 +53,7 @@ render_dml_tab <-
     
     #### Exploratory Graph Functions/Functionality ####
     # update the picker input selection based on input$group_var column
-    # observeEvent(input$group_var, {
-    #   # lapply with the as.character gets rid of the factors
-    #   unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
-    #   updatePickerInput(session, "group_var_values", choices = unique_values)
-    # })
+    
     observeEvent(input$group_var, {
       if (input$group_var == "None selected") {
         updatePickerInput(session, "group_var_values", selected = "None selected")
@@ -147,40 +142,44 @@ render_dml_tab <-
     
     
     
+    
     observe({
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
-
+      
       lapply(input$x_sel, function(x_var) {
         output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({
           filtered_dat <- global_dat
-
-
+          
           # Apply filter based on selected group values
           if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
-            # print("input$group_var")
-            # print(input$group_var)
-            # print("input$group_var_values")
-            # print(input$group_var_values)
             filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
-
           }
-
-
-          if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
+          
+          # Define plot name for this iteration
+          plot_name <- glue::glue('{input$y_sel}_vs_{x_var}')
+          
+          # Reset input values so the donwload csv names are unique to every input$y_sel and input$x_sel combination
+          isolate({
+            updateSelectInput(session, "y_sel", selected = NULL)
+            updateSelectInput(session, "x_sel", selected = NULL)
+          })
+          
+          # Generate plot
+          p <- if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
             if (input$group_var == 'None selected') {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var,customdata = 'row_id')) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var,customdata = 'row_id')) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
                 theme_bw()
             }
           } else {
             if (input$group_var == 'None selected') {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
                 geom_point() +
                 {
                   if (input$regression)
@@ -193,7 +192,7 @@ render_dml_tab <-
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              p <- ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var),customdata = 'row_id')) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var),customdata = 'row_id')) +
                 geom_point(alpha = .5) +
                 {
                   if (input$regression)
@@ -203,22 +202,28 @@ render_dml_tab <-
                 theme_bw()
             }
           }
-
-          p <- ggplotly(p,source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
-
+          
+          # Convert ggplot to plotly
+          p <- ggplotly(p, source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
+          
+          # Configure the plot with the download button
           p <- config(
-            p,scrollZoom = TRUE,
+            p, 
+            scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
-              list(button_fullscreen(), button_download(data= p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]](),plot_name = glue('{input$y_sel}_vs_{input$x_sel_data}')))
+              list(button_fullscreen(), button_download(data = p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]](), plot_name = plot_name))
             ),
-            modeBarButtonsToRemove = c("toImage", "hoverClosest","hoverCompare"),
+            modeBarButtonsToRemove = c("toImage", "hoverClosest", "hoverCompare"),
             displaylogo = FALSE
           )
-
+          
+          # Return the plot
+          p
         })
       })
     })
-   
+    
+    
     
     #### exploration Data Table ####
     
@@ -239,16 +244,9 @@ render_dml_tab <-
       selected_data(NULL)
     })
     
-    # Observe select event
-    # observeEvent(event_data("plotly_selected"), {
-    #   selected_data_indices <- event_data("plotly_selected")$pointNumber + 1
-    #   selected_rows <- global_dat[selected_data_indices, ]
-    #   selected_data(selected_rows)
-    # })
+    
     observeEvent(event_data("plotly_selected", source = "plot1"), {
-      click_data <<- event_data("plotly_selected", source = "plot1")
-      print('click_data')
-      print(click_data$customdata)
+      click_data <- event_data("plotly_selected", source = "plot1")
       if (!is.null(click_data)) {
         if (input$group_var == "None selected") {
           
@@ -276,9 +274,9 @@ render_dml_tab <-
     #### Session info ####
     session_info <- reactive({
       session_info_data <- 
-      data.frame(
-        Treatments = str_c(glue("{input$treatments}"), collapse = ","),
-        Target = str_c(glue("{input$outcome}"), collapse = ","), check.names = F)
+        data.frame(
+          Treatments = str_c(glue("{input$treatments}"), collapse = ","),
+          Target = str_c(glue("{input$outcome}"), collapse = ","), check.names = F)
       
       
       info_dt <-
@@ -292,7 +290,7 @@ render_dml_tab <-
       return(info_dt)
     })
     
-  
+    
     #### Clear Gobal Variabes ####
     #This code clears all global variables if the calculate button is pressed more than once
     # this is to ensure that there are no memory issues.
@@ -520,11 +518,11 @@ render_dml_tab <-
     #   graph
     #   }})
     
-  
-
+    
+    
     #### PPT Full Screen Capability #### look at dml_ui notes at bottom of script
     #observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
     
-    }
+  }
 
 
