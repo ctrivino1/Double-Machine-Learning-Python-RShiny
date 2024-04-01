@@ -229,15 +229,7 @@ render_dml_tab <-
     
     # Observe click event
     selected_data <- reactiveVal(NULL)
-    # observeEvent(event_data("plotly_click"), {
-    #   click_data <- event_data("plotly_click")
-    #   if (!is.null(click_data)) {
-    #     point <- click_data[["pointNumber"]]
-    #     point_name <- rownames(click_data)[point + 1] # Add 1 to pointNumber because of 0-based indexing
-    #     selected_data(as.data.frame(c(selected_data(), point_name)) %>%select(-NA_character_.))
-    #     
-    #   }
-    # })
+
     
     observeEvent(event_data("plotly_deselect", source = 'plot1'), {
       print('plotly_deselect')
@@ -254,6 +246,8 @@ render_dml_tab <-
           selected_rows <- global_dat[selected_data_indices, ]
           selected_data(selected_rows)
         } else  { 
+          ## matching any datapoint on the graph with its original data row_id number,
+          ## that way if there is the same x and y value then it will make sure to go to the correct row
           result <- inner_join(global_dat, click_data, by = c("row_id" = "customdata"))
           selected_data(result)
         }
