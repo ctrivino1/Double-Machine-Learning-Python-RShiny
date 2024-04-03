@@ -145,25 +145,25 @@ render_dml_tab <-
     
     observe({
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
-      
+
       lapply(input$x_sel, function(x_var) {
         output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({
           filtered_dat <- global_dat
-          
+
           # Apply filter based on selected group values
           if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
             filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
           }
-          
+
           # Define plot name for this iteration
           plot_name <- glue::glue('{input$y_sel}_vs_{x_var}')
-          
+
           # Reset input values so the donwload csv names are unique to every input$y_sel and input$x_sel combination
           isolate({
             updateSelectInput(session, "y_sel", selected = NULL)
             updateSelectInput(session, "x_sel", selected = NULL)
           })
-          
+
           # Generate plot
           p <- if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
             if (input$group_var == 'None selected') {
@@ -202,13 +202,13 @@ render_dml_tab <-
                 theme_bw()
             }
           }
-          
+
           # Convert ggplot to plotly
           p <- ggplotly(p, source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
-          
+
           # Configure the plot with the download button
           p <- config(
-            p, 
+            p,
             scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
               list(button_fullscreen(), button_download(data = p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]](), plot_name = plot_name))
@@ -216,12 +216,15 @@ render_dml_tab <-
             modeBarButtonsToRemove = c("toImage", "hoverClosest", "hoverCompare"),
             displaylogo = FALSE
           )
-          
+
           # Return the plot
-          p
+          p %>% toWebGL()
         })
       })
     })
+    
+    
+    
     
     
     
