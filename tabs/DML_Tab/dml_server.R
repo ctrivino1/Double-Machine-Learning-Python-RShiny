@@ -14,7 +14,7 @@ render_dml_tab <-
         text = "Please wait..."
       )
       if (is.null(input$treatments) && !is.na(input$n_treats)){
-        py_dat <- r_to_py(global_dat_python)
+        py_dat <- r_to_py(global$jquery_dat)
         
         py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
         print("py_result worked")
@@ -30,7 +30,7 @@ render_dml_tab <-
         #}
       }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
         print("treatment list given")
-        py_dat <- r_to_py(global_dat_python)
+        py_dat <- r_to_py(global$jquery_dat)
         py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
         
         # gets rid of duplicate treatments and keeps the treatment that is signficiant
@@ -38,8 +38,8 @@ render_dml_tab <-
         
         global$ATE_summary  <- ate_sum
         test <<- py_result[[1]]
-        print("ATE data")
-        print(global$ATE_summary)
+        # print("ATE data")
+        # print(global$ATE_summary)
         global$plr_summary <- py_result[[2]]
         
         remove_modal_spinner()
@@ -145,25 +145,25 @@ render_dml_tab <-
     
     observe({
       req(input$y_sel, input$x_sel)  # Require selection of y and x variables
-
+      
       lapply(input$x_sel, function(x_var) {
         output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({
           filtered_dat <- global_dat
-
+          
           # Apply filter based on selected group values
           if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
             filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
           }
-
+          
           # Define plot name for this iteration
           plot_name <- glue::glue('{input$y_sel}_vs_{x_var}')
-
+          
           # Reset input values so the donwload csv names are unique to every input$y_sel and input$x_sel combination
           isolate({
             updateSelectInput(session, "y_sel", selected = NULL)
             updateSelectInput(session, "x_sel", selected = NULL)
           })
-
+          
           # Generate plot
           p <- if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
             if (input$group_var == 'None selected') {
@@ -202,10 +202,10 @@ render_dml_tab <-
                 theme_bw()
             }
           }
-
+          
           # Convert ggplot to plotly
           p <- ggplotly(p, source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
-
+          
           # Configure the plot with the download button
           p <- config(
             p,
@@ -216,7 +216,7 @@ render_dml_tab <-
             modeBarButtonsToRemove = c("toImage", "hoverClosest", "hoverCompare"),
             displaylogo = FALSE
           )
-
+          
           # Return the plot
           p %>% toWebGL()
         })
@@ -232,7 +232,7 @@ render_dml_tab <-
     
     # Observe click event
     selected_data <- reactiveVal(NULL)
-
+    
     
     observeEvent(event_data("plotly_deselect", source = 'plot1'), {
       print('plotly_deselect')
@@ -304,7 +304,7 @@ render_dml_tab <-
         all_objects <- ls(envir = .GlobalEnv)
         
         # Exclude the variable 'global_dat'
-        objects_to_remove <- setdiff(all_objects, c('global_dat','render_dml_tab','global','dml_func','global_dat_python'))
+        objects_to_remove <- setdiff(all_objects, c('global_dat','render_dml_tab','global','dml_func','global$jquery_dat'))
         
         # Remove all objects, except 'global_dat', from the global environment
         rm(list = objects_to_remove, envir = .GlobalEnv)
@@ -487,6 +487,26 @@ render_dml_tab <-
       }
     )
     
+    
+    
+    #### Jquery ####
+    
+    ## restet button ##
+    observeEvent(input$reset, {
+      global$jquery_dat <- global_dat_copy
+      updateQueryBuilder(
+        inputId = "widget_filter",
+        reset = TRUE
+      )
+    })
+    
+    
+    observe( {
+      widget_filter_rules <- input$widget_filter$r_rules
+      dt <- datatable(filter_table(global_dat_copy, widget_filter_rules))
+      global$jquery_dat <- as.data.frame(dt$x$data)
+      
+    })
     
     
     
