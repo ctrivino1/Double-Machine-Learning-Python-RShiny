@@ -16,6 +16,10 @@ library(lubridate)
 library(glue)
 library(plotly)
 library(shinycssloaders)
+library(jqbr)
+
+
+
 
 
 
@@ -26,10 +30,15 @@ logger::log_info('packages loaded')
 
 #### Global imported Data ####
 global_dat <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
+
 global_dat$row_id <- seq_len(nrow(global_dat))
-global_dat_python <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
 
+binary_cols <- names(global_dat)[sapply(global_dat, function(x) (is.numeric(x) && all(unique(x) %in% c(0, 1))) || all(unique(x) %in% c("0", "1")))]
+## change string binary to numeric binary if found
+global_dat <- global_dat %>%
+  mutate(across(all_of(binary_cols), as.numeric))
 
+global_dat_copy <- global_dat
 
 
 
@@ -49,7 +58,9 @@ global <- reactiveValues(
   binary_count = 0,
   continuous_count = 0,
   string_count = 0,
-  selected_x_vars = NULL)
+  selected_x_vars = NULL,
+  ## jquery builder filtered data
+  jquery_dat = global_dat_copy)
 
 #### Global Functions ####
 # Identify columns that contain strings or numeric values of 0 and 1
@@ -63,24 +74,34 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 
 # Function to classify variable types
 ### need to fix this
+# get_variable_type <- function(variable) {
+#   variable <- as.character(variable)
+#   # Check if variable contains only "0" and "1" characters
+#   if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
+#     return("binary")                                                              
+#   }  else if (all(grepl("[0-9]", variable, fixed = TRUE)) && !all(grepl("[a-zA-Z]", variable))) { 
+#     # Check if variable contains only numeric characters
+#     return("continuous")                                                           
+#   } else if (!all(is.na(as.numeric(variable)))) {
+#     # Check if variable can be converted to numeric
+#     return("continuous")
+#   } else {
+#     # Check if variable contains alphanumeric characters
+#     if (any(grepl("[a-zA-Z]", variable))) {
+#       return("alphanumeric")
+#     } else {
+#       return("string")                                                                                   
+#     }
+#   }
+# }
 get_variable_type <- function(variable) {
-  variable <- as.character(variable)
-  # Check if variable contains only "0" and "1" characters
-  if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
-    return("binary")                                                              
-  }  else if (all(grepl("[0-9]", variable, fixed = TRUE)) && !all(grepl("[a-zA-Z]", variable))) { 
-    # Check if variable contains only numeric characters
-    return("continuous")                                                           
-  } else if (!all(is.na(as.numeric(variable)))) {
-    # Check if variable can be converted to numeric
-    return("continuous")
+  if ((is.factor(variable) && all(levels(variable) %in% c("0", "1"))) ||  # Check if factor with levels 0 and 1
+      (is.numeric(variable) && all(variable %in% c(0, 1)))) {              # Check if numeric with values 0 and 1
+    "binary"                                                               # Return "binary" if the conditions are met
+  } else if (is.factor(variable)) {                                       
+    "string"                                                                # Return "string" if the variable is a factor but not binary
   } else {
-    # Check if variable contains alphanumeric characters
-    if (any(grepl("[a-zA-Z]", variable))) {
-      return("alphanumeric")
-    } else {
-      return("string")                                                                                   
-    }
+    "continuous"                                                            # Return "continuous" if the variable is numeric but not binary
   }
 }
 
@@ -161,3 +182,117 @@ button_download <- function(data, plot_name) {
     )
   )
 }
+
+
+#### Jquery Builder Functions ####
+generate_widget_filters <- function(data) {
+  print("generate_widget_filters function being run")
+  widget_filters <- list()
+  
+  
+  # For binary columns
+  binary_cols <- names(data)[sapply(data, function(x) {
+    if (is.numeric(x)) {
+      unique_values <- unique(x)
+      (all(unique_values %in% c(0, 1)) && length(unique_values) == 2) ||
+        (all(unique(x) %in% c("0", "1")) && length(unique_values) == 2)
+    } else {
+      FALSE
+    }
+  })]
+  data <- data %>%
+    mutate(across(all_of(binary_cols), as.numeric))
+  
+  for (col in binary_cols) {
+    filter <- list(
+      id = col,
+      label = col,
+      type = "integer",
+      validation = list(min = 0, max = 1),
+      plugin = "slider",
+      plugin_config = list(min = 0, max = 1, value = 0)
+    )
+    widget_filters <- c(widget_filters, list(filter))
+  }
+  
+  # For continuous columns
+  continuous_cols <- names(data)[sapply(data, function(x) {
+    is_numeric <- is.numeric(x)
+    not_binary <- is.numeric(x) && !all(unique(x) %in% c(0, 1))
+    return(is_numeric && not_binary)
+  })]
+  for (col in continuous_cols) {
+    min_val <- round(min(data[[col]]), 0)
+    max_val <- round(max(data[[col]]), 0)
+    filter <- list(
+      id = col,
+      label = col,
+      type = "integer",
+      validation = list(min = min_val, max = max_val),
+      plugin = "slider",
+      plugin_config = list(min = min_val, max = max_val, value = min_val)
+    )
+    widget_filters <- c(widget_filters, list(filter))
+  }
+  
+  # For date columns
+  date_cols <- names(data)[sapply(data, is.Date)]
+  for (col in date_cols) {
+    filter <- list(
+      id = col,
+      label = col,
+      type = "date",
+      validation = list(format = "YYYY/MM/DD"),
+      plugin = "datepicker",
+      plugin_config = list(
+        format = "yyyy/mm/dd",
+        todayBtn = "linked",
+        todayHighlight = TRUE,
+        autoclose = TRUE
+      )
+    )
+    widget_filters <- c(widget_filters, list(filter))
+  }
+  
+  # For categorical columns
+  categorical_cols <- names(data)[sapply(data, is.character)]
+  for (col in categorical_cols) {
+    unique_values <- unique(data[[col]])
+    options <- lapply(unique_values, function(value) list(id = value, name = value))
+    filter <- list(
+      id = col,
+      label = col,
+      type = "string",
+      input = "select",
+      multiple = TRUE,
+      plugin = "selectize",
+      plugin_config = list(
+        valueField = "id",
+        labelField = "name",
+        searchField = "name",
+        sortField = "name",
+        options = options
+      )
+    )
+    widget_filters <- c(widget_filters, list(filter))
+  }
+  
+  return(widget_filters)
+}
+
+widget_filters <- generate_widget_filters(global_dat_copy)
+
+## Rules ##
+rules_widgets <- NULL
+# can add a base filter like so:
+# rules_widgets <- list(
+#   condition = "AND",
+#   rules = list(
+#     list(
+#       id = "date",
+#       operator = "between",
+#       value = c(earliest_date_str, today_str)
+#     )
+#   )
+# )
+
