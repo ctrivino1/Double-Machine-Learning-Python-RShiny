@@ -65,52 +65,88 @@ css_body <- tags$head(
     
     /* darker font for break line */
     hr {
-    border-top: 1px solid #000000;
-       }
+      border-top: 1px solid #000000;
+    }
     
     /* border for iframe */
     iframe-border {
-    border: 2px solid #000000;
+      border: 2px solid #000000;
     }
     
     /* hide slide header numbersin presentation */
     .slides > slide > htroup > h1 {
-    display: none;
+      display: none;
     }
     
     /* hide slide headers */
     .increase-fontsize-text {
-    font-size: 20px;
+      font-size: 20px;
     }
     
     /* creating a class '.custom-tab-scrollbar' to add a scroll bar to the contents displayed in tabs */
     .custom-tab-scrollbar {
-    height: 50vh;
-    overflow-y: auto;
-    padding: 10px;
+      height: 50vh;
+      overflow-y: auto;
+      padding: 10px;
     }
     
     /* creating a class name '.full_screen' */
     .full-screen {
-            position: fixed;
-            height: 98vh !important;
-            width: 98vw !important;
-            left: 0;
-            top: 0;
-            z-index: 9999;
-            overflow: hidden;
-        }
+      position: fixed;
+      height: 98vh !important;
+      width: 98vw !important;
+      left: 0;
+      top: 0;
+      z-index: 9999;
+      overflow: hidden;
+    }
     
     
+    /* Increasing the size of the selectize input of the Jquery builder input */
+    .selectize-input input[type='text'] {
+      width: 200px !important; /* Adjust the width as needed */
+    }
     
-    /* Additional css code for custom options */
     
-
+    }
+  ")
+  ),
+  tags$style(
+    HTML("
+         /* enabling tooltip for the Jquery slider selcections */
+    .tooltip {
+    position: absolute;
+    z-index: 1070;
+    display: none; /* Initially hide tooltip */
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.42857143;
+    line-break: auto;
+    text-align: left;
+    text-align: start;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    word-spacing: normal;
+    word-wrap: normal;
+    white-space: normal;
+    font-size: 12px;
+    filter: alpha(opacity = 100); /* For older versions of IE */
+    opacity: 1; /* Make the tooltip fully visible */
+    color: #ffffff; /* Text color */
+    background-color: #000000; /* Background color */
     
-    
-         ")
+    /* Lower the position of the tooltip */
+    bottom: 15px; /* Adjust the value as needed */
+    }
+  ")
   )
 )
+
+
 
 
 #### Hiden Btns ####
@@ -171,6 +207,7 @@ dml_outcome <- tabPanel(
   span('Causal Analysis Example', style = 'background-color: white; color: black; font-weight: bold;font-size: 13px;'),
   fluidPage(
     shinyjs::useShinyjs(),
+    useQueryBuilder(),
     jss_body,
     css_body,
     hidden_buttons,
@@ -292,10 +329,10 @@ dml_outcome <- tabPanel(
             tags$div(
               class = "custom-tab-scrollbar",
               tabBox(width = '100%',
-                tabPanel(textOutput('binary_count'), withSpinner(uiOutput("binary_plots"),color = '#28b78d')),
-                tabPanel(textOutput('continuous_count'), withSpinner(uiOutput("continuous_plots"),color = '#28b78d')),
-                tabPanel(textOutput('string_count'), withSpinner(uiOutput("string_plots"),color = '#28b78d')),
-                id = "tabset1"
+                     tabPanel(textOutput('binary_count'), withSpinner(uiOutput("binary_plots"),color = '#28b78d')),
+                     tabPanel(textOutput('continuous_count'), withSpinner(uiOutput("continuous_plots"),color = '#28b78d')),
+                     tabPanel(textOutput('string_count'), withSpinner(uiOutput("string_plots"),color = '#28b78d')),
+                     id = "tabset1"
               )
             )
           ),column(width=5,  DTOutput("data_table"))
@@ -304,40 +341,82 @@ dml_outcome <- tabPanel(
     ),
     fluidRow(tags$hr(), width = 12),
     br(),
-    #### DML ####
-    fluidRow(
+    #### DML UI ####
+    fluidRow(box(
+      title = 'DML for Causal Analysis',
+      collapsible = TRUE,
       width = 12,
-      box(
-        title = 'DML for Causal Analysis',
-        width = 12,
-        collapsible = TRUE,
-        fluidRow(
-          column(4, selectInput('outcome', 'Target Variable', selected = 'net_tfa', names(global_dat), multiple = FALSE)),
-          column(4, selectInput('treatments', 'Treatment Variables', names(global_dat), multiple = TRUE))
-        ),
-        fluidRow(
-          column(4, numericInput('n_treats', 'top_n_treatments', value = NULL, min = 1, max = 100))
-        ),
-        fluidRow(
-          column(4, actionBttn("dml", "Calculate", style = "fill", color = "success"))
-        ),
-        tags$hr(),
-        fluidRow(
-          conditionalPanel(
-            condition = "input.dml > 0",
-            tabBox(
-              id = "ppt_tabBox",
-              title = 'Data Tables',
+      fluidRow(
+        column(
+          width = 6,
+          box(
+            title = "DML Parameters",
+            fluidRow(
               width = 6,
-              tabPanel('ATE DT', dataTableOutput("ATE")),
-              tabPanel('Model Summary DT', dataTableOutput("plr"))
+              column(6,selectInput('outcome', 'Target Variable', selected = 'net_tfa', names(global_dat), multiple = FALSE)),
+              column(6, selectInput('treatments', 'Treatment Variables', names(global_dat), multiple = TRUE))
+            ),
+            fluidRow(
+              column(width =6, numericInput('n_treats', 'top_n_treatments', value = NULL, min = 1, max = 100))
+            ),
+            fluidRow(
+              column(width =6,actionBttn("dml", "Calculate", style = "fill", color = "success"))
+            )
+          )
+        ),
+        column(
+          width = 6,
+          box(
+            title = "DML Data Drilldown",
+            fluidRow(width=12, # Adjusted to span the entire row
+                     column(
+                       width = 12, # Adjusted to span the entire column
+                       h4("Builder"),
+                       queryBuilderInput(
+                         inputId = "widget_filter",
+                         filters = widget_filters,
+                         rules = rules_widgets,
+                         display_errors = TRUE,
+                         return_value = "all"
+                       ),
+                       fluidRow(width = 12, # Adjusted to span the entire row
+                                column(
+                                  width = 12, # Adjusted to span the entire column
+                                  div(
+                                    style = "display: inline-block;",
+                                    actionButton(
+                                      "reset",
+                                      "Reset",
+                                      class = "btn-danger"
+                                    )
+                                  )
+                                )
+                       )
+                     )
             )
           )
         )
+      ),
+      conditionalPanel(
+        condition = "input.dml > 0",
+        box(
+          title = "Conditional Data Tables",
+          width = 12,
+          tabBox(
+            id = "dml_data_tabbox",
+            title = 'Data Tables',
+            width = 6,
+            tabPanel('ATE DT', dataTableOutput("ATE")),
+            tabPanel('Model Summary DT', dataTableOutput("plr"))
+          )
+        )
       )
-    )
-  )
-)
+    )),
+    fluidRow(tags$hr(), width = 12)
+    
+  ))
+
+## end of dml
 
 #### Notes ####
 
