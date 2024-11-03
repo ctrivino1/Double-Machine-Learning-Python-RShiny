@@ -25,6 +25,26 @@ css_navbar <- tags$style(HTML(
   '
 ))
 
+JS_navbar <- tags$script(HTML( 
+  
+  '
+ 
+  // Add GitHub logo and text link to the navbar
+ 
+  $(document).ready(function() {
+ 
+    var header = $(".navbar > .container-fluid");
+ 
+    var githubURL = "https://github.com/ctrivino1/Double-Machine-Learning-Python-RShiny.git"; 
+ 
+    header.append(\'<div style="float:right;margin-right: 10px;padding-top:20px;"><a href="\' + githubURL + \'" target="_blank" style="color: white; text-decoration: underline;">Follow me on GitHub</a></div>\');
+ 
+    header.append(\'<div style="float:right;margin-right: 10px;"><a href="\' + githubURL + \'" target="_blank"><img src="github_logo.png" alt="GitHub" style="width:75px;height:50px;padding-top:2px;"></a></div>\');
+ 
+  });
+ 
+  '))
+
 
 #### Nav Bar UI ####
 fluidPage( useWaiter() ,waiter_show_on_load(
@@ -32,10 +52,9 @@ fluidPage( useWaiter() ,waiter_show_on_load(
   html = tagList(
     spin_3k(),        # Loading spinner
     h3("Loading Causal Analysis Tool...")  # Loading text
-  )
-),
-# I don't think I nee dthe uioutput with the waiter_show_on_load, fix this to just be a server file modal
-uiOutput("modalUI"),
+  ),
+), useShinyjs(),
+actionButton("open_modal", "Upload CSV", class = "btn-primary"),
   
   # Add CSS for the banner in the head
   tags$head(
@@ -52,48 +71,33 @@ uiOutput("modalUI"),
     "))
   ),
   
-  # Banner div, placed above the navbarPage
-  tags$div(class = "banner", "Example"),
+    # Banner div, placed above the navbarPage
+  tags$div(
+    class = "banner",
+    style = "display: flex; flex-direction: column; align-items: center; font-size: 15px;",
+  
+    # Main title text
+  tags$div(
+    span("CAUSAL ANALYSIS TOOL")
+  ),
+  
+  # Version text positioned underneath
+  tags$div(
+    style = "font-size: 10px; margin-top: 0px;",
+    glue::glue("v1.0")
+  )
+  ), 
+  #hide the navbar title text
+  tags$head(tags$style(type = 'text/css','.navbar-brand{display:none;}')),
   
   # Navbar page content
   navbarPage(
     id = 'tabs',
-    title = tags$div(
-      style = '
-        text-align:left;
-        font-size:16px;
-        padding-left:0px;
-        padding-bottom:0px;
-        margin-bottom:0px;
-        margin-top:0px;
-      ',
-      tags$a(
-        href = "",
-        tags$img(
-          style = 'margin: -20px 0px 0px 0px; padding:0px;',
-          src = "./dart-logo.png",
-          height = '50'
-        )
-      ),
-      tags$a(
-        href = "",
-        tags$img(
-          style = 'margin: -10px 0px 0px 0px; padding:0px;',
-          src = "./AMATLogo.png",
-          height = '50',
-          width = '50'
-        )
-      ),
-      span('CAUSAL ANALYSIS TOOL', style = 'background-color: #024d70; color: white; font-weight: bold;font-size: 15px;'),
-      tags$a(
-        style = "font-size:10px;color:white;position:absolute;left:325px;top:34px; margin:0px; padding:0px;",
-        glue::glue('v1.0')
-      )
-    ),
+    title = 'CAUSAL ANALYSIS TOOL',
     Overview_tab,
     Explore_tab,
     DML_tab,
-    csv_button_tab,
+    JS_navbar,
     css_navbar
   )
   )
