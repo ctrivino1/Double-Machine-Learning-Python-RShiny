@@ -1,0 +1,13 @@
+name: dml_dynamic_test
+title: dml_dynamic_test
+username: big-cat
+account: big-cat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11537967
+bundleId: 8396993
+url: https://big-cat.shinyapps.io/dml_dynamic_test/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|Causal_analysis_ppt.pptx|LICENSE|README.md|slidy_presentation.Rmd|tabs/User_causal_analysis/user_analysis_server.R|tabs/User_causal_analysis/user_analysis_ui.R|www/slidy_presentation.html|Causal_analysis_ppt_img

@@ -1,55 +1,245 @@
 source("./global.r")
+
 source_python("./functions/dml.py")
+
+source_python("./functions/elastic_net_dim_reduction.py")
 
 
 ####  Python dml function ####
 render_dml_tab <- 
   function(input, output,session) {
+    
+    
+    observeEvent(input$open_modal, {
+      showModal(modalDialog(
+        title = "Upload CSV",
+        fileInput("fileUpload", "Choose a CSV File", accept = ".csv"),
+        easyClose = TRUE,
+        footer = modalButton("Close")
+      ))
+    })
+    
+    observe({
+      runjs("document.getElementById('open_modal').click();")
+    })
+    
+    
+    observeEvent(input$fileUpload, {
+      
+      
+      # Load and process the CSV file
+      global_data <- as.data.table(read_csv(input$fileUpload$datapath))
+      print("global_data")
+      print(global_data)
+      
+      # Initialize tree choices, if any specific selection logic is applied
+      column_data_frame <- data.frame(Columns = names(global_data))
+      global$tree_choices <- make_tree(column_data_frame, c("Columns"))
+      global$all_tree_choices <- unlist(global$tree_choices)
+      
+      
+      
+      print("computing binary cols")
+      # Identify columns containing binary data (0/1 or "0"/"1")
+      binary_cols <- names(global_data)[sapply(global_data, function(x) {
+        (is.numeric(x) && all(unique(x) %in% c(0, 1))) || all(unique(x) %in% c("0", "1"))
+      })]
+      print('binary_cols finsihed')
+      
+      # Copy the data for other use
+      global$data_copy <- data.table::copy(global_data)
+      
+      # Add a row_id column to keep track of rows uniquely
+      global_data$row_id <- seq_len(nrow(global_data))
+      
+      # Identify columns containing strings or binary values
+      print("computing string or binary")
+      string_or_binary_cols <- sapply(global_data, function(x) {
+        is.character(x) || (is.numeric(x) && all(unique(x) %in% c(0, 1)))
+      })
+      
+      # Convert these columns to factors for better handling in UI elements
+      #global_data[string_or_binary_cols] <- lapply(global_data[string_or_binary_cols], as.factor)
+      global_data[, (names(global_data)[string_or_binary_cols]) := lapply(.SD, as.factor), .SDcols = string_or_binary_cols]
+      
+      # Store widget filters, using the generate_widget_filters function
+      global$widget_filters <- generate_widget_filters(global$data_copy)
+      
+      # Initialize widget rules, if any additional filtering logic is desired
+      ## Rules ##
+      global$widget_rules <- NULL
+      # can add a base filter like so:
+      # widget_rules <- list(
+      #   condition = "AND",
+      #   rules = list(
+      #     list(
+      #       id = "date",
+      #       operator = "between",
+      #       value = c(earliest_date_str, today_str)
+      #     )
+      #   )
+      # )
+      global$data <- global_data
+      # Update pickerInput choices based on uploaded data columns
+      updatePickerInput(session, "y_sel", choices = names(global$data))
+      updatePickerInput(session, "x_sel", choices = names(global$data))
+      
+      group_choices <- names(global$data)[sapply(global$data, function(x) is.character(x) || is.factor(x) ||(is.numeric(x) && all(unique(x) %in% c(0, 1))))]
+      updatePickerInput(session, "group_var", choices = c('None selected', group_choices))
+      
+      updatePickerInput(
+        session = session, 
+        inputId = 'outcome', 
+        choices = c('None Selected', names(global$data_copy)), 
+        selected = NULL  # Keep initial selection NULL
+      )
+      
+      
+      
+      
+    })
+    
+    
+    output$querbuilder_ui <- renderUI({
+      req(global$widget_filters)  # Ensure that global$widget_filters is available
+      
+      # Create the UI with a fluidRow
+      fluidRow(
+        column(
+          width = 12,
+          # Add the query builder input
+          queryBuilderInput(
+            inputId = "widget_filter",
+            filters = global$widget_filters,
+            rules = global$widget_rules,
+            display_errors = TRUE,
+            return_value = "all"
+          ),
+          # Add the reset button
+          div(
+            style = "display: inline-block; margin-bottom: 20px;",
+            actionButton("reset", "Reset", class = "btn-danger")
+          )
+        )
+      )
+    })
+    
+    
+    output$treeview_ui <- renderUI({
+      req(global$tree_choices,global$all_tree_choices)
+      treecheckInput(
+        inputId = "tree_choices",
+        label = "Unselect unnecessary columns:",
+        choices = global$tree_choices,
+        selected = global$all_tree_choices,
+        width = "100%"
+      )
+    })
+    
+    # Display selected tree output
+    output$result <- renderPrint({
+      input$tree
+    })
+    
+    
     output$value <- renderText({input$n_treats})
     observeEvent(input$dml, {
+      req(global$EN_ind_results)
       print("button clicked")
       show_modal_spinner(
         spin = "cube-grid",
         color = "#28b78d",
         text = "Please wait..."
       )
-      if (is.null(input$treatments) && !is.na(input$n_treats)){
-        py_dat <- r_to_py(global$jquery_dat)
-        
-        py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
-        print("py_result worked")
-        
-        
-        filter1 <- subset(py_result[[1]], Significant != 'FALSE')
-        global$ATE_summary  <-subset(filter1, ATE != 'NULL')
-        global$plr_summary <- py_result[[2]]
-        
-        remove_modal_spinner()
-        
-        
-        #}
-      }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
-        print("treatment list given")
-        py_dat <- r_to_py(global$jquery_dat)
-        py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
-        
-        # gets rid of duplicate treatments and keeps the treatment that is signficiant
-        ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
-        
-        global$ATE_summary  <- ate_sum
-        test <<- py_result[[1]]
-        # print("ATE data")
-        # print(global$ATE_summary)
-        global$plr_summary <- py_result[[2]]
-        
-        remove_modal_spinner()
-      } else {
-        remove_modal_spinner()
-        showNotification("Please only select treatments, or n_treatments, there should not be values in both")
-      }
+      print("global_lasso_dim_results")
+      lasso_dim <<- input$treatments
+      out <<- input$outcome
+      j_q <- global$jquery_dat
+      
+      jq_dat <<- subset(global$jquery_dat, select = c(intersect(names(global$jquery_dat), input$treatments), input$outcome))
+      print('computing py_dat')
+      py_dat <- r_to_py(jq_dat)
+      treats <<-  input$treatments
+      pred <<- input$outcome
+      print("computing dml")
+      py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
+
+      # gets rid of duplicate treatments and keeps the treatment that is signficiant
+      ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
+
+      global$ATE_summary  <- ate_sum
+      test <<- py_result[[1]]
+      # print("ATE data")
+      # print(global$ATE_summary)
+      global$plr_summary <- py_result[[2]]
+      # if (is.null(input$treatments) && !is.na(input$n_treats)){
+      #   jq_dat <- subset(global$jquery_dat, select = intersect(names(global$jquery_dat), global$EN_ind_results))
+      #   py_dat <- r_to_py(jq_dat)
+      #   print("r_to_py worked")
+      #   py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
+      #   print("py_result worked")
+      #   
+      #   
+      #   filter1 <- subset(py_result[[1]], Significant != 'FALSE')
+      #   global$ATE_summary  <-subset(filter1, ATE != 'NULL')
+      #   global$plr_summary <- py_result[[2]]
+      #   
+      #   remove_modal_spinner()
+      #   
+      #   
+      #   #}
+      # }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
+      #   print("treatment list given")
+      #   jq_dat <- subset(global$jquery_dat, select = intersect(names(global$jquery_dat), global$EN_ind_results))
+      #   py_dat <- r_to_py(jq_dat)
+      #   py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
+      #   
+      #   # gets rid of duplicate treatments and keeps the treatment that is signficiant
+      #   ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
+      #   
+      #   global$ATE_summary  <- ate_sum
+      #   test <<- py_result[[1]]
+      #   # print("ATE data")
+      #   # print(global$ATE_summary)
+      #   global$plr_summary <- py_result[[2]]
+      #   
+      #   remove_modal_spinner()
+      # } else {
+      #   remove_modal_spinner()
+      #   showNotification("Please only select treatments, or n_treatments, there should not be values in both")
+      # }
       remove_modal_spinner()
       
     })
+    
+    
+    
+    
+    
+    #### Update DML covariates ####
+    observeEvent(input$en, {
+      req(input$outcome != 'None Selected')
+      show_modal_spinner(
+        spin = "cube-grid",
+        color = "#28b78d",
+        text = "Please wait..."
+      )
+      print("input$outcome is running elasticnet")
+      lasso_df <<- global$jquery_dat
+      
+      pandas_df <- r_to_py(lasso_df)
+      lasso_result <<- ENet_reg_dim_reduction(target = input$outcome,df = pandas_df )
+      # evaluation metrics can be found in lasso_result[2]
+      # found rates are found here:
+      features <- lasso_result[[1]]$Features
+      coefficients <- unlist(lasso_result[[1]]$Coefficients)
+      display_labels <- paste(features, "(", format(coefficients, scientific = TRUE), ")")
+      global$EN_ind_results <- setNames(as.list(features), display_labels)
+      global$EN_eval_metrics <- as.data.frame(lasso_result[2])
+      #global$lasso_dim_eval_metrics <- lasso_result[[1]]
+      remove_modal_spinner()
+    
+    }, ignoreInit = TRUE)
     
     #### Exploratory Graph Functions/Functionality ####
     # update the picker input selection based on input$group_var column
@@ -59,16 +249,25 @@ render_dml_tab <-
         updatePickerInput(session, "group_var_values", selected = "None selected")
       } else {
         # lapply with the as.character gets rid of the factors
-        unique_values <- unique(lapply(global_dat, as.character)[[input$group_var]])
-        updatePickerInput(session, "group_var_values", choices = unique_values)
+        unique_values <- unique(lapply(global$data, as.character)[[input$group_var]])
+        updatePickerInput(session, "group_var_values", choices = unique_values, selected = unique_values)
       }
     })
+    
+    #### update treatment list ####
+    observe({
+      print(" observe statement for updated treatments")
+      # Update selectInput choices whenever global$EN_ind_results changes
+      
+      updatePickerInput(session, "treatments", choices = global$EN_ind_results, selected = global$EN_ind_results)
+    })
+  
     
     # Function to update selected x variables
     update_selected_x_vars <- function() {
       # Update selected x variables
       global$selected_x_vars <- lapply(input$x_sel, function(x_var) {
-        list(name = x_var, type = get_variable_type(global_dat[[x_var]]))
+        list(name = x_var, type = get_variable_type(global$data[[x_var]]))
       })
     }
     
@@ -108,7 +307,7 @@ render_dml_tab <-
     })
     
     output$binary_plots <- renderUI({
-      binary_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "binary", input$x_sel)  # Filter binary variables
+      binary_x_vars <- Filter(function(x) get_variable_type(global$data[[x]]) == "binary", input$x_sel)  # Filter binary variables
       plot_output_list <- lapply(binary_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
         plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
@@ -119,18 +318,20 @@ render_dml_tab <-
     })
     
     output$continuous_plots <-  renderUI({
-      continuous_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "continuous", input$x_sel)  # Filter continuous variables
+      print("made it to output$continuous plots")
+      continuous_x_vars <- Filter(function(x) get_variable_type(global$data[[x]]) == "continuous", input$x_sel)  # Filter continuous variables
       plot_output_list <- lapply(continuous_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
         plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
         div(style = "margin-bottom: 20px;", plot_output)
       })
-      
+
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
     })
     
+    
     output$string_plots <- renderUI({
-      string_x_vars <- Filter(function(x) get_variable_type(global_dat[[x]]) == "string", input$x_sel)  # Filter string variables
+      string_x_vars <- Filter(function(x) get_variable_type(global$data[[x]]) == "string", input$x_sel)  # Filter string variables
       plot_output_list <- lapply(string_x_vars, function(x_var) {
         plotname <- paste("plot", x_var, sep = "_")
         plot_output <- plotlyOutput(plotname, height = '300px',width = '100%')  # Create plot output for each continuous variable
@@ -140,85 +341,159 @@ render_dml_tab <-
       do.call(tagList, plot_output_list)  # Combine plot outputs into a tag list
     })
     
+   
     
-    
-    
+    #### Explore Graphs ####
     observe({
-      req(input$y_sel, input$x_sel)  # Require selection of y and x variables
+      # requirements to run
+      req(
+        input$y_sel,  # Requires input from the variable 'y_sel'.
+        input$x_sel,  # Requires input from the variable 'x_sel'.
+        (!is.null(input$all_years) || length(input$month_range) >= 1 || length(input$year_range) >= 1 ))
+      print(paste("y_sel:", input$y_sel))
+      print(paste("x_sel:", input$x_sel))
+      print(paste("month_range:", toString(input$month_range)))
+      print(paste("year_range:", toString(input$year_range)))
+      print(paste("all_years:", toString(input$all_years)))
+        # Requires that at least one of the following conditions is true:
+        # 1. 'all_years' checkbox is selected (input$all_years).
+        # 2. A month range of length 2 is selected (length(input$month_range) == 2).
+        # 3. A year range of length 2 is selected (length(input$year_range) == 2).
       
+      
+      
+      
+      
+      test <- global$data
+      filtered_dat <- data.table::copy(global$data)
+      # Apply filter based on selected group values
+      if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
+        filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
+      }
+      
+      
+      if (input$all_years) {
+        print("all years")
+        frame_value <- global$data$dt_time
+      } else if (length(input$month_range) == 1) {
+        dt_range <- format(input$month_range, "%m/%d/%Y")
+        filtered_dat <- filtered_dat %>%
+          filter(as.Date(dt_time, format = "%m/%d/%Y") == as.Date(dt_range[1], format = "%m/%d/%Y"))
+        filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+        frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      } else if (length(input$month_range) == 2) {
+        dt_range <- format(input$month_range, "%m/%d/%Y")
+        filtered_dat <- filtered_dat %>%
+          filter(as.Date(dt_time, format = "%m/%d/%Y") >= as.Date(dt_range[1], format = "%m/%d/%Y") & 
+                   as.Date(dt_time, format = "%m/%d/%Y") <= as.Date(dt_range[2], format = "%m/%d/%Y"))
+        filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+        frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      } else if (length(input$year_range) == 1) {
+        dt_range <- format(input$year_range, "%Y")
+        filtered_dat <- filtered_dat %>%
+          filter(year(make_date(dt_time_year)) == year(make_date(dt_range[1])))
+        frame_value <- filtered_dat$dt_time_year
+      } else if (length(input$year_range) == 2) {
+        dt_range <- format(input$year_range, "%Y")
+        filtered_dat <- filtered_dat %>%
+          filter(year(make_date(dt_time_year)) >= year(make_date(dt_range[1])) & 
+                   year(make_date(dt_time_year)) <= year(make_date(dt_range[2])))
+        frame_value <- filtered_dat$dt_time_year
+      } else{frame_value <- NULL}
+      
+      print(unique(filtered_dat$dt_time_year))
+      
+      
+      print("identical")
+      print(identical(test, filtered_dat))
+      
+      
+
       lapply(input$x_sel, function(x_var) {
         output[[paste("plot", x_var, sep = "_")]] <- renderPlotly({
-          filtered_dat <- global_dat
+          print("filtered dat insite lapply")
           
-          # Apply filter based on selected group values
-          if (!is.null(input$group_var_values) && length(input$group_var_values) > 0) {
-            filtered_dat <- filtered_dat %>% filter(filtered_dat[[input$group_var]] %in% as.list(input$group_var_values))
-          }
-          
+
           # Define plot name for this iteration
           plot_name <- glue::glue('{input$y_sel}_vs_{x_var}')
-          
+
           # Reset input values so the donwload csv names are unique to every input$y_sel and input$x_sel combination
           isolate({
             updateSelectInput(session, "y_sel", selected = NULL)
             updateSelectInput(session, "x_sel", selected = NULL)
           })
-          
+
           # Generate plot
           p <- if (is.factor(filtered_dat[[x_var]]) || is.factor(filtered_dat[[input$y_sel]])) {
+            g_point <- F
             if (input$group_var == 'None selected') {
-              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, frame = frame_value, customdata='row_id')) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var,customdata = 'row_id')) +
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = input$group_var,customdata = 'row_id'), frame = frame_value) +
                 geom_boxplot() +
                 ggtitle(paste("Boxplot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
                 theme_bw()
             }
           } else {
             if (input$group_var == 'None selected') {
-              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel)) +
+              g_point <- F
+              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, frame = frame_value, customdata='row_id')) +
                 geom_point() +
-                {
-                  if (input$regression)
                     stat_smooth(
                       method = "lm",se = F,
                       linetype = "dashed",
                       color = "red"
-                    )
-                } +
+                    ) +
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel)) +
                 theme_bw()
             } else {
-              ggplot(filtered_dat, aes_string(x = x_var, y = input$y_sel, color = as.character(input$group_var),customdata = 'row_id')) +
+              g_point <- T
+              filtered_dat %>% 
+                highlight_key(~filtered_dat[[input$group_var]]) %>%
+              ggplot( aes_string(x = x_var, y = input$y_sel, color = filtered_dat[[input$group_var]], frame = frame_value,customdata = 'row_id')) + #,customdata = 'row_id',
                 geom_point(alpha = .5) +
-                {
-                  if (input$regression)
-                    stat_smooth(method = "lm", se = F,linetype = 'dashed')
-                } +
+                stat_smooth(method = "lm", se = F,linetype = 'dashed') +
                 ggtitle(paste("Scatter Plot of", x_var, "vs", input$y_sel, "with Group Coloring")) +
                 theme_bw()
             }
           }
-          
+
           # Convert ggplot to plotly
-          p <- ggplotly(p, source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
+          print('converted to ggploty')
+          if (g_point == F) {
+            print("gpoint FALSE")
+            p <- ggplotly(p, source = "plot1") %>%  layout(clickmode = "event+select", dragmode = 'select')
+          } else if (g_point) {
+            print("gpoint TRUE")
+            p <- highlight(
+      ggplotly(p, source = "plot1"),on = "plotly_hover",
+      off = "plotly_deselect",
+      opacityDim = 0.1
+            ) %>%  layout(clickmode = "event+select", dragmode = 'select')
+          } else{}
           
           # Configure the plot with the download button
+          print("adding custom buttons")
+          # uncomment this and the button_download out to include a download csv button for each chart
+          #plot_data <- p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]]()
           p <- config(
             p,
             scrollZoom = TRUE,
             modeBarButtonsToAdd = list(
-              list(button_fullscreen(), button_download(data = p[["x"]][["visdat"]][[p[["x"]][["cur_data"]]]](), plot_name = plot_name))
-            ),
+              list(button_fullscreen()
+                    #,button_download(data = plot_data, plot_name = plot_name))
+            ))
+            ,
             modeBarButtonsToRemove = c("toImage", "hoverClosest", "hoverCompare"),
             displaylogo = FALSE
           )
+          print("done building custom button")
+
           
-          # Return the plot
-          p %>% toWebGL()
+          p  
         })
       })
     })
@@ -232,7 +507,7 @@ render_dml_tab <-
     
     # Observe click event
     selected_data <- reactiveVal(NULL)
-    
+
     
     observeEvent(event_data("plotly_deselect", source = 'plot1'), {
       print('plotly_deselect')
@@ -246,23 +521,23 @@ render_dml_tab <-
         if (input$group_var == "None selected") {
           
           selected_data_indices <- click_data$pointNumber + 1
-          selected_rows <- global_dat[selected_data_indices, ]
+          selected_rows <- global$data[selected_data_indices, ]
           selected_data(selected_rows)
         } else  { 
           ## matching any datapoint on the graph with its original data row_id number,
           ## that way if there is the same x and y value then it will make sure to go to the correct row
-          result <- inner_join(global_dat, click_data, by = c("row_id" = "customdata"))
+          result <- inner_join(global$data, click_data, by = c("row_id" = "customdata"))
           selected_data(result)
         }
       }
     })
     
-    # Output global_dat table
+    
     output$data_table <- renderDT({
       if (!is.null(selected_data())) {
-        datatable(selected_data(), rownames = FALSE)
+        datatable(selected_data(), rownames = FALSE, options = list(scrollX = TRUE, scrollY = TRUE))
       } else {
-        datatable(global_dat, rownames = FALSE)
+        datatable(global$data, rownames = FALSE, options = list(scrollX = TRUE, scrollY = TRUE))
       }
     })
     
@@ -303,10 +578,10 @@ render_dml_tab <-
         # Get the names of all objects in the global environment
         all_objects <- ls(envir = .GlobalEnv)
         
-        # Exclude the variable 'global_dat'
-        objects_to_remove <- setdiff(all_objects, c('global_dat','render_dml_tab','global','dml_func','global$jquery_dat'))
+        # Exclude the variable 'global$data'
+        objects_to_remove <- setdiff(all_objects, c('global$data','render_dml_tab','global','dml_func','global$jquery_dat','global$data_copy'))
         
-        # Remove all objects, except 'global_dat', from the global environment
+        # Remove all objects, except 'global$data', from the global environment
         rm(list = objects_to_remove, envir = .GlobalEnv)
         ## using garbage collection function instead of a session refresh. Garbage collection will update the memory useage(in my case the global enviornment variables) automatically
         gc()
@@ -397,6 +672,32 @@ render_dml_tab <-
     })
     ####
     
+    ### Render EN Evaluation metrics dv
+    output$EN_eval <- renderDT(
+      datatable({
+        req(is.data.frame(global$EN_eval_metrics))
+        global$EN_eval_metrics},
+        #callback =JS(callback2), # create a callback2 variable
+        rownames = F, 
+        extensions = c('Select','Buttons','FixedColumns'),
+        fillContainer = TRUE, 
+        editable=F,
+        options = list(
+          paging=FALSE,
+          searchHighlight = TRUE,
+          dom = 'Bftir',
+          scrollX="200px",
+          scrollY="200px",
+          fixedColumns = list(leftColumns = 1),
+          buttons = list('copy', 'csv',
+                         list(
+                           extend = "collection",
+                           text = 'Reset',
+                           action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test4', true, {priority: 'event'});}"))
+          )),selection = "single") %>% 
+        formatStyle(0, cursor = 'pointer'))
+    
+    
     #### Render Data Tables ####
     # render the ATE DT
     output$ATE <- renderDT(
@@ -437,26 +738,30 @@ render_dml_tab <-
     output$plr <- renderDT(
       datatable({
         req(is.data.frame(global$plr_summary))
-        global$plr_summary},
-        #callback =JS(callback2), # create a callback2 variable
-        rownames = F, 
-        extensions = c('Select','Buttons','FixedColumns'),
-        fillContainer = TRUE, 
-        editable=F,
-        options = list(
-          paging=FALSE,
-          searchHighlight = TRUE,
-          dom = 'Bftir',
-          scrollX="200px",
-          scrollY="200px",
-          fixedColumns = list(leftColumns = 1),
-          buttons = list('copy', 'csv',
-                         list(
-                           extend = "collection",
-                           text = 'Reset',
-                           action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test2', true, {priority: 'event'});}"))
-          )),selection = "single") %>% 
-        formatStyle(0, cursor = 'pointer'))
+        global$plr_summary
+      },
+      # callback = JS(callback2), # create a callback2 variable
+      rownames = FALSE, 
+      extensions = c('Select', 'Buttons', 'FixedColumns'),
+      fillContainer = TRUE, 
+      editable = FALSE,
+      options = list(
+        paging = FALSE,
+        searchHighlight = TRUE,
+        dom = 'Bftir',
+        scrollX = TRUE,
+        scrollY = TRUE,
+        fixedColumns = list(leftColumns = 1),
+        buttons = list('copy', 'csv',
+                       list(
+                         extend = "collection",
+                         text = 'Reset',
+                         action = DT::JS("function ( e, dt, node, config ) {Shiny.setInputValue('test2', true, {priority: 'event'});}"))
+        )
+      ), 
+      selection = "single") %>% 
+        formatStyle(0, cursor = 'pointer')
+    )
     
     
     #### DT Custom Bttns ####
@@ -493,53 +798,70 @@ render_dml_tab <-
     
     ## restet button ##
     observeEvent(input$reset, {
-      global$jquery_dat <- global_dat_copy
+      global$jquery_dat <- global$data_copy
       updateQueryBuilder(
         inputId = "widget_filter",
         reset = TRUE
       )
     })
     
+    # make sure the tree selection does not include the outcome variable
+    ##observeEvent(input$outcome, {
+     ## req(input$outcome)
+     ## print('outcome')
+      ##print(input$outcome)
+      ##tc <<- input$tree_choices
+      ##new_tree_df <- global$tree_selection_df %>% filter(Metric != input$outcome)
+      ##updateTreeview(inputId = 'tree_choices', selected = c(new_tree_df$Metric))
+    #})
+    
+    # Observe the file input and process the uploaded CSV
+   
     
     observe( {
-      widget_filter_rules <- input$widget_filter$r_rules
-      dt <- datatable(filter_table(global_dat_copy, widget_filter_rules))
-      global$jquery_dat <- as.data.frame(dt$x$data)
-      
+    widget_filter_rules <<- input$widget_filter$r_rules
+    print("widget rules")
+    print(widget_filter_rules)
+    dt <- datatable(filter_table(global$data_copy, widget_filter_rules))
+    jquery_dat <<- as.data.frame(dt$x$data)
+    valid_col_names <- intersect(input$tree_choices,colnames(jquery_dat))
+    global$jquery_dat <- jquery_dat[, valid_col_names,drop = FALSE]
+    print("jquary dat")
+    print(length(colnames(global$jquery_dat )))
+    print(jquery_dat %>% head())
+    #print(unique(global$jquery_dat$dt_time))
+    
+    
+    })
+    
+    
+    observe({
+      print("input$treatments")
+      print(input$treatments)
+    })
+    
+    ####  DML Instructions ####
+    observeEvent(input$help, {
+      introjs(session, options = list("nextLabel" = "Next Step", "prevLabel" = "Previous Step", "skipLabel" = "Skip Tour"),
+              events = list("oncomplete" = I('alert("Tour completed!")')))
+    })
+  
+    
+    ### show the csv modal again if the button is clicked:
+    observeEvent(input$upload_csv_btn, {
+      show_modal(TRUE)  # Show the modal
+    })
+    
+    observeEvent(input$cancel, {
+      show_modal(FALSE)
     })
     
     
     
-    #### Ploty ggplot EX ####
-    # plotly graph example
-    # output$plotlygraph <- renderPlotly({
-    #   if (!is.null(global$ATE_summary)) {
-    #     graph <- ggplotly(ggplot(global$ATE_summary[order(global$ATE_summary$ATE),], aes(x = treatment, y = ATE, fill = ATE,label = ATE)) +
-    #                              
-    #                              geom_bar(stat = "identity") +
-    #                              
-    #                              scale_fill_viridis_c() +  # Use viridis color scale
-    #                              
-    #                              scale_y_log10() +  # Add log-scale transformation to the y-axis
-    #                              
-    #                              
-    #                              labs(title = "ATE Scores Bar Chart with Heatmap Color (Log-Scale Y-axis)",
-    #                                   
-    #                                   x = "treatment", y = "ATE Score (log scale)") +
-    #                              
-    #                              theme_minimal() +
-    #                              
-    #                              theme(axis.text.x = element_text(angle = 45, hjust = 1)))
-    #     
-    #   # return the graph
-    #   graph
-    #   }})
-    
-    
-    
     #### PPT Full Screen Capability #### look at dml_ui notes at bottom of script
-    #observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {            if (document.exitFullscreen) {              document.exitFullscreen();            }          }")})
-    
+    observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {if (document.exitFullscreen) {document.exitFullscreen();}}")})
+    waiter_hide()
   }
+
 
 

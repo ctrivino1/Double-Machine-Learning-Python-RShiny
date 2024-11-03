@@ -1,0 +1,13 @@
+name: tesst
+title: tesst
+username: big-cat
+account: big-cat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11549870
+bundleId: 9309088
+url: https://big-cat.shinyapps.io/tesst/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|Causal_analysis_ppt.pptx|LICENSE|README.md|slidy_presentation.Rmd|www/slidy_presentation.html

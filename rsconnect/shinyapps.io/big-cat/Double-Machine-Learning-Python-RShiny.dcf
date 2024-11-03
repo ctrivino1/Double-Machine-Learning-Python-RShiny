@@ -1,0 +1,13 @@
+name: Double-Machine-Learning-Python-RShiny
+title: Double-Machine-Learning-Python-RShiny
+username: big-cat
+account: big-cat
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 13143513
+bundleId: 9275369
+url: https://big-cat.shinyapps.io/Double-Machine-Learning-Python-RShiny/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Afghanistan.csv|All_strikes.csv|Causal_analysis_ppt.pptx|Pakistan.csv|Practice_Apps/ggplot_time_range_app.R|Practice_Apps/ggplotly_callbacks_example.R|Practice_Apps/jquery_dynamic_filter_creation.R|Practice_Apps/jquery_rfilters_ex.R|Practice_Apps/jquery_widgets.R|README.md|slidy_presentation.Rmd|Somalia.csv|www/github_logo.png|www/slidy_presentation.html|Yemen.csv|Causal_analysis_ppt_img

@@ -6,9 +6,10 @@ from warnings import simplefilter
 simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import pandas as pd
-import sklearn
 from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
+from xgboost import XGBRegressor
+import sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.metrics import r2_score
 from sklearn.preprocessing import StandardScaler
@@ -240,10 +241,7 @@ def optimize_and_update_models_parallel_continuous(X_train, X_test, y_train, y_t
     return lasso_model, xgb_model, rf_model
 
 def dml_func(data,outcome,treatments=None,cov=None,n_treatments=None):
-  if 'acft_sn_id' in data.columns:
-    data['acft_sn_id'] = data['acft_sn_id'].astype(str)
   ### In R the data is being changed to category and I need to change the categorical binary columns back to floats
-  print("treatments: ", treatments)
   category_cols = data.select_dtypes(include='category')
   cols_to_convert = [col for col in category_cols.columns if set(data[col]) == {0, 1}]
 

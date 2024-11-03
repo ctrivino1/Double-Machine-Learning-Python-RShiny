@@ -1,30 +1,25 @@
-source('./tabs/DML_Tab/dml_ui.R')
+source("./tabs/DML_Tab/dml_ui.R")
+source("./tabs/DML_Tab/dml_server.R")
 
-JS_navbar <- tags$script(HTML(
-  '
-  // Add GitHub logo and text link to the navbar
-  $(document).ready(function() {
-    var header = $(".navbar > .container-fluid");
-    var githubURL = "https://github.com/ctrivino1/Double-Machine-Learning-Python-RShiny.git"; 
-    header.append(\'<div style="float:right;margin-right: 10px;padding-top:20px;"><a href="\' + githubURL + \'" target="_blank" style="color: white; text-decoration: underline;">Follow me on GitHub</a></div>\');
-    header.append(\'<div style="float:right;margin-right: 10px;"><a href="\' + githubURL + \'" target="_blank"><img src="github_logo.png" alt="GitHub" style="width:75px;height:50px;padding-top:2px;"></a></div>\');
-  });
-  '
-))
-
-
+# CSS for the banner
 css_navbar <- tags$style(HTML(
   '
   /* Set background color of navbar */
   .navbar-default {
-    background-color: #28b78d !important;
+    background-color: #024d70 !important;
   }
   
+  /* Set styling for all tabs */
+  .navbar-default .navbar-nav > li > a {
+    color: white !important; /* Text color for all tabs is white */
+    font-weight: bold !important; /* Always bold the tab titles */
+  }
+
   /* Set styling for active tabs */
   .navbar-default .navbar-nav > .active > a,
   .navbar-default .navbar-nav > .active > a:focus,
   .navbar-default .navbar-nav > .active > a:hover {
-    color: #555 !important; /* Text color for active tabs */
+    color: black !important; /* Text color for active tabs is black */
     background-color: white !important; /* Background color for active tabs is white */
   }
   '
@@ -32,9 +27,73 @@ css_navbar <- tags$style(HTML(
 
 
 #### Nav Bar UI ####
-navbarPage(id = 'tabs', span( 'Causal Analysis App', style = 'background-color: ##28b78d; color: white'), dml_outcome,JS_navbar,css_navbar)
-
-
-
-
-
+fluidPage( useWaiter() ,waiter_show_on_load(
+  color = "#024d70",  # Overlay background color
+  html = tagList(
+    spin_3k(),        # Loading spinner
+    h3("Loading Causal Analysis Tool...")  # Loading text
+  )
+),
+# I don't think I nee dthe uioutput with the waiter_show_on_load, fix this to just be a server file modal
+uiOutput("modalUI"),
+  
+  # Add CSS for the banner in the head
+  tags$head(
+    tags$style(HTML(" 
+      .banner {
+        width: 100%;
+        background-color: #800080; /* Purple background */
+        color: #FFFFFF; /* White text */
+        text-align: center;
+        padding: 0px;
+        font-size: 18px;
+        font-weight: bold;
+      }
+    "))
+  ),
+  
+  # Banner div, placed above the navbarPage
+  tags$div(class = "banner", "Example"),
+  
+  # Navbar page content
+  navbarPage(
+    id = 'tabs',
+    title = tags$div(
+      style = '
+        text-align:left;
+        font-size:16px;
+        padding-left:0px;
+        padding-bottom:0px;
+        margin-bottom:0px;
+        margin-top:0px;
+      ',
+      tags$a(
+        href = "",
+        tags$img(
+          style = 'margin: -20px 0px 0px 0px; padding:0px;',
+          src = "./dart-logo.png",
+          height = '50'
+        )
+      ),
+      tags$a(
+        href = "",
+        tags$img(
+          style = 'margin: -10px 0px 0px 0px; padding:0px;',
+          src = "./AMATLogo.png",
+          height = '50',
+          width = '50'
+        )
+      ),
+      span('CAUSAL ANALYSIS TOOL', style = 'background-color: #024d70; color: white; font-weight: bold;font-size: 15px;'),
+      tags$a(
+        style = "font-size:10px;color:white;position:absolute;left:325px;top:34px; margin:0px; padding:0px;",
+        glue::glue('v1.0')
+      )
+    ),
+    Overview_tab,
+    Explore_tab,
+    DML_tab,
+    csv_button_tab,
+    css_navbar
+  )
+  )

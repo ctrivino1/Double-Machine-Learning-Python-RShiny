@@ -1,7 +1,7 @@
 
 logger::log_info('running global.R')
-
 #### Libraries ####
+library(data.table)
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
@@ -17,6 +17,12 @@ library(glue)
 library(plotly)
 library(shinycssloaders)
 library(jqbr)
+library(bslib)
+library(rintrojs)
+library(shinytreeview)
+library(shinyBS)
+library(readr)
+library(waiter)
 
 
 
@@ -29,21 +35,36 @@ logger::log_info('packages loaded')
 
 
 #### Global imported Data ####
-global_dat <- DoubleML::fetch_401k(return_type = "data.frame", instrument = TRUE)
+#global_dat <-  read_csv("Rates Combined 1 Chart (MM).csv")
 
-global_dat$row_id <- seq_len(nrow(global_dat))
+#global_dat <- replace(global_dat, is.na(global_dat), 0)
+#og_column_names <- colnames(global_dat)
+#names(global_dat)<-make.names(names(global_dat),unique = TRUE)
+#new_column_names <- names(global_dat)
 
-binary_cols <- names(global_dat)[sapply(global_dat, function(x) (is.numeric(x) && all(unique(x) %in% c(0, 1))) || all(unique(x) %in% c("0", "1")))]
-## change string binary to numeric binary if found
-global_dat <- global_dat %>%
-  mutate(across(all_of(binary_cols), as.numeric))
 
-global_dat_copy <- global_dat
+
+## dataframe for the tree choice metric selection on the DML page
+#tree_choices <- make_tree(iris, c("Group", "Metric"))
+
+##
+
+
+
+
+# ## change string binary to numeric binary if found
+# global_dat <- global_dat %>%
+#   mutate(across(all_of(binary_cols), as.numeric))
+
+# Convert to Date object
 
 
 
 #### Global reactive values ####
 global <- reactiveValues(
+  #inputed data
+  data = NULL,
+  data_copy = NULL,
   # plots 
   ATE_summary = NULL,
   plr_summary = NULL,
@@ -60,15 +81,21 @@ global <- reactiveValues(
   string_count = 0,
   selected_x_vars = NULL,
   ## jquery builder filtered data
-  jquery_dat = global_dat_copy)
+  jquery_dat = NULL,
+  # ElasticNet signficiant variables
+  EN_ind_results = NULL,
+  # ElasticNet evaluation metrics
+  EN_eval_metrics = NULL,
+  # Tree selection choices
+  tree_selection_df = NULL,
+  tree_choices = NULL,
+  all_tree_choice_selections = NULL,
+  # jquery widget rules
+  widget_filters = NULL,
+  widget_rules = NULL)
 
 #### Global Functions ####
-# Identify columns that contain strings or numeric values of 0 and 1
-string_or_binary_cols <- sapply(global_dat, function(x) is.character(x) || (is.numeric(x) && all(unique(x) %in% c(0, 1))))
 
-
-# Convert identified columns to factor columns
-global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], as.factor)
 
 
 
@@ -77,11 +104,11 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 # get_variable_type <- function(variable) {
 #   variable <- as.character(variable)
 #   # Check if variable contains only "0" and "1" characters
-#   if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) { 
-#     return("binary")                                                              
-#   }  else if (all(grepl("[0-9]", variable, fixed = TRUE)) && !all(grepl("[a-zA-Z]", variable))) { 
+#   if (is.character(variable) && all(unique(variable) %in% c("0", "1")) && length(unique(variable)) == 2) {
+#     return("binary")
+#   }  else if (all(grepl("[0-9]", variable, fixed = TRUE)) && !all(grepl("[a-zA-Z]", variable))) {
 #     # Check if variable contains only numeric characters
-#     return("continuous")                                                           
+#     return("continuous")
 #   } else if (!all(is.na(as.numeric(variable)))) {
 #     # Check if variable can be converted to numeric
 #     return("continuous")
@@ -90,7 +117,7 @@ global_dat[string_or_binary_cols] <- lapply(global_dat[string_or_binary_cols], a
 #     if (any(grepl("[a-zA-Z]", variable))) {
 #       return("alphanumeric")
 #     } else {
-#       return("string")                                                                                   
+#       return("string")
 #     }
 #   }
 # }
@@ -98,7 +125,7 @@ get_variable_type <- function(variable) {
   if ((is.factor(variable) && all(levels(variable) %in% c("0", "1"))) ||  # Check if factor with levels 0 and 1
       (is.numeric(variable) && all(variable %in% c(0, 1)))) {              # Check if numeric with values 0 and 1
     "binary"                                                               # Return "binary" if the conditions are met
-  } else if (is.factor(variable)) {                                       
+  } else if (is.factor(variable)) {
     "string"                                                                # Return "string" if the variable is a factor but not binary
   } else {
     "continuous"                                                            # Return "continuous" if the variable is numeric but not binary
@@ -133,7 +160,7 @@ button_fullscreen <- function() {
          var button = ev.currentTarget;
          var astr = button.getAttribute('data-attr');
          var val = button.getAttribute('data-val') || false;
-      
+
          if(astr === 'full_screen') {
            if(val === 'false') {
              button.setAttribute('data-val', 'true');
@@ -150,6 +177,7 @@ button_fullscreen <- function() {
   )
 }
 
+
 dirty_csv <- function(data) {
   c(
     paste0(colnames(data), collapse = ","),
@@ -158,8 +186,41 @@ dirty_csv <- function(data) {
 }
 
 
+# button_download <- function(data, plot_name) {
+#   # Concatenate multiple plot names into a single string separated by underscores
+#   
+#   list(
+#     name = "datacsv",
+#     title = "Download plot data as csv",
+#     icon = list(
+#       path = icons$csv,
+#       transform = 'matrix(1 0 0 1 0 0) scale(0.03125)'
+#     ),
+#     click = dirty_js(
+#       sprintf(
+#         "function(gd, ev) {
+#            var el = document.createElement('a');
+#            el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
+#            el.setAttribute('download', '%s.csv');
+#            el.click();
+#         }",
+#         dirty_csv(data),
+#         plot_name  # Use the concatenated plot name
+#       )
+#     )
+#   )
+# }
 button_download <- function(data, plot_name) {
-  # Concatenate multiple plot names into a single string separated by underscores
+  js_code <- sprintf(
+    "function(gd, ev) {
+       var el = document.createElement('a');
+       el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
+       el.setAttribute('download', '%s.csv');
+       el.click();
+    }",
+    dirty_csv(data),
+    plot_name
+  )
   
   list(
     name = "datacsv",
@@ -168,21 +229,9 @@ button_download <- function(data, plot_name) {
       path = icons$csv,
       transform = 'matrix(1 0 0 1 0 0) scale(0.03125)'
     ),
-    click = dirty_js(
-      sprintf(
-        "function(gd, ev) {
-           var el = document.createElement('a');
-           el.setAttribute('href', 'data:text/plain;charset=utf-8,%s');
-           el.setAttribute('download', '%s.csv');
-           el.click();
-        }",
-        dirty_csv(data),
-        plot_name  # Use the concatenated plot name
-      )
-    )
+    click = dirty_js(js_code)
   )
 }
-
 
 #### Jquery Builder Functions ####
 generate_widget_filters <- function(data) {
@@ -190,19 +239,11 @@ generate_widget_filters <- function(data) {
   widget_filters <- list()
   
   
-  # For binary columns
-  binary_cols <- names(data)[sapply(data, function(x) {
-    if (is.numeric(x)) {
-      unique_values <- unique(x)
-      (all(unique_values %in% c(0, 1)) && length(unique_values) == 2) ||
-        (all(unique(x) %in% c("0", "1")) && length(unique_values) == 2)
-    } else {
-      FALSE
-    }
-  })]
+  # # For binary columns
+  binary_cols <- names(data)[sapply(data, function(x) (is.numeric(x) && all(unique(x) %in% c(0, 1))) || all(unique(x) %in% c("0", "1")))]
   data <- data %>%
     mutate(across(all_of(binary_cols), as.numeric))
-  
+
   for (col in binary_cols) {
     filter <- list(
       id = col,
@@ -216,28 +257,46 @@ generate_widget_filters <- function(data) {
   }
   
   # For continuous columns
-  continuous_cols <- names(data)[sapply(data, function(x) {
+  continuous_cols <<- names(data)[sapply(data, function(x) {
     is_numeric <- is.numeric(x)
     not_binary <- is.numeric(x) && !all(unique(x) %in% c(0, 1))
     return(is_numeric && not_binary)
   })]
   for (col in continuous_cols) {
-    min_val <- round(min(data[[col]]), 0)
-    max_val <- round(max(data[[col]]), 0)
+    min_val <- min(data[[col]])
+    max_val <- max(data[[col]])
+    
+    # Determine if the column contains integer or decimal values
+    is_decimal <- any(!is.na(data[[col]]) & !data[[col]] %% 1 == 0)
+    
+    if (is_decimal) {
+      min_val <- round(min_val, 3)
+      max_val <- round(max_val, 3)
+      step <- 0.001
+    } else {
+      min_val <- round(min_val)
+      max_val <- round(max_val)
+      step <- 1
+    }
+    
     filter <- list(
       id = col,
       label = col,
-      type = "integer",
+      type = "double",  # or any other appropriate type
       validation = list(min = min_val, max = max_val),
       plugin = "slider",
-      plugin_config = list(min = min_val, max = max_val, value = min_val)
+      plugin_config = list(min = min_val, max = max_val, value = min_val, step = step)
     )
+    
     widget_filters <- c(widget_filters, list(filter))
   }
+  
   
   # For date columns
   date_cols <- names(data)[sapply(data, is.Date)]
   for (col in date_cols) {
+    min_date <- min(data[[col]])
+    max_date <- max(data[[col]])
     filter <- list(
       id = col,
       label = col,
@@ -248,11 +307,14 @@ generate_widget_filters <- function(data) {
         format = "yyyy/mm/dd",
         todayBtn = "linked",
         todayHighlight = TRUE,
-        autoclose = TRUE
+        autoclose = TRUE,
+        startDate = min_date,
+        endDate = max_date
       )
     )
     widget_filters <- c(widget_filters, list(filter))
   }
+  
   
   # For categorical columns
   categorical_cols <- names(data)[sapply(data, is.character)]
@@ -280,19 +342,8 @@ generate_widget_filters <- function(data) {
   return(widget_filters)
 }
 
-widget_filters <- generate_widget_filters(global_dat_copy)
 
-## Rules ##
-rules_widgets <- NULL
-# can add a base filter like so:
-# rules_widgets <- list(
-#   condition = "AND",
-#   rules = list(
-#     list(
-#       id = "date",
-#       operator = "between",
-#       value = c(earliest_date_str, today_str)
-#     )
-#   )
-# )
+
+
+
 
