@@ -10,12 +10,26 @@ render_dml_tab <-
   function(input, output,session) {
     
     
+    # observeEvent(input$open_modal, {
+    #   showModal(modalDialog(
+    #     title = "Upload CSV",
+    #     fileInput("fileUpload", "Choose a CSV File", accept = ".csv"),
+    #     easyClose = TRUE,
+    #     footer = modalButton("Close")
+    #   ))
+    # })
+    output$modalFooter <- renderUI({
+      req(input$fileUpload)  # Only show footer if a file has been uploaded
+      modalButton("Close")
+    })
+    
+    # Observe to open the modal
     observeEvent(input$open_modal, {
       showModal(modalDialog(
         title = "Upload CSV",
         fileInput("fileUpload", "Choose a CSV File", accept = ".csv"),
-        easyClose = TRUE,
-        footer = modalButton("Close")
+        easyClose = FALSE,  # Prevent closing by clicking outside initially
+        footer = uiOutput("modalFooter")  # Dynamically rendered footer
       ))
     })
     
@@ -172,42 +186,7 @@ render_dml_tab <-
       # print("ATE data")
       # print(global$ATE_summary)
       global$plr_summary <- py_result[[2]]
-      # if (is.null(input$treatments) && !is.na(input$n_treats)){
-      #   jq_dat <- subset(global$jquery_dat, select = intersect(names(global$jquery_dat), global$EN_ind_results))
-      #   py_dat <- r_to_py(jq_dat)
-      #   print("r_to_py worked")
-      #   py_result <- dml_func(data=py_dat,outcome = input$outcome, n_treatments = input$n_treats)
-      #   print("py_result worked")
-      #   
-      #   
-      #   filter1 <- subset(py_result[[1]], Significant != 'FALSE')
-      #   global$ATE_summary  <-subset(filter1, ATE != 'NULL')
-      #   global$plr_summary <- py_result[[2]]
-      #   
-      #   remove_modal_spinner()
-      #   
-      #   
-      #   #}
-      # }else if (!is.null(input$treatments) && is.na(input$n_treats)) {
-      #   print("treatment list given")
-      #   jq_dat <- subset(global$jquery_dat, select = intersect(names(global$jquery_dat), global$EN_ind_results))
-      #   py_dat <- r_to_py(jq_dat)
-      #   py_result <- dml_func(data=py_dat,outcome = input$outcome, treatments = input$treatments)
-      #   
-      #   # gets rid of duplicate treatments and keeps the treatment that is signficiant
-      #   ate_sum <<- py_result[[1]] %>% group_by(treatment) %>% filter(!(Significant == F  & n() >1))
-      #   
-      #   global$ATE_summary  <- ate_sum
-      #   test <<- py_result[[1]]
-      #   # print("ATE data")
-      #   # print(global$ATE_summary)
-      #   global$plr_summary <- py_result[[2]]
-      #   
-      #   remove_modal_spinner()
-      # } else {
-      #   remove_modal_spinner()
-      #   showNotification("Please only select treatments, or n_treatments, there should not be values in both")
-      # }
+      
       remove_modal_spinner()
       
     })
@@ -348,13 +327,13 @@ render_dml_tab <-
       # requirements to run
       req(
         input$y_sel,  # Requires input from the variable 'y_sel'.
-        input$x_sel,  # Requires input from the variable 'x_sel'.
-        (!is.null(input$all_years) || length(input$month_range) >= 1 || length(input$year_range) >= 1 ))
+        input$x_sel)#,  # Requires input from the variable 'x_sel'.
+        #(!is.null(input$all_years) || length(input$month_range) >= 1 || length(input$year_range) >= 1 ))
       print(paste("y_sel:", input$y_sel))
       print(paste("x_sel:", input$x_sel))
-      print(paste("month_range:", toString(input$month_range)))
-      print(paste("year_range:", toString(input$year_range)))
-      print(paste("all_years:", toString(input$all_years)))
+      # print(paste("month_range:", toString(input$month_range)))
+      # print(paste("year_range:", toString(input$year_range)))
+      # print(paste("all_years:", toString(input$all_years)))
         # Requires that at least one of the following conditions is true:
         # 1. 'all_years' checkbox is selected (input$all_years).
         # 2. A month range of length 2 is selected (length(input$month_range) == 2).
@@ -372,36 +351,37 @@ render_dml_tab <-
       }
       
       
-      if (input$all_years) {
-        print("all years")
-        frame_value <- global$data$dt_time
-      } else if (length(input$month_range) == 1) {
-        dt_range <- format(input$month_range, "%m/%d/%Y")
-        filtered_dat <- filtered_dat %>%
-          filter(as.Date(dt_time, format = "%m/%d/%Y") == as.Date(dt_range[1], format = "%m/%d/%Y"))
-        filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
-        frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
-      } else if (length(input$month_range) == 2) {
-        dt_range <- format(input$month_range, "%m/%d/%Y")
-        filtered_dat <- filtered_dat %>%
-          filter(as.Date(dt_time, format = "%m/%d/%Y") >= as.Date(dt_range[1], format = "%m/%d/%Y") & 
-                   as.Date(dt_time, format = "%m/%d/%Y") <= as.Date(dt_range[2], format = "%m/%d/%Y"))
-        filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
-        frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
-      } else if (length(input$year_range) == 1) {
-        dt_range <- format(input$year_range, "%Y")
-        filtered_dat <- filtered_dat %>%
-          filter(year(make_date(dt_time_year)) == year(make_date(dt_range[1])))
-        frame_value <- filtered_dat$dt_time_year
-      } else if (length(input$year_range) == 2) {
-        dt_range <- format(input$year_range, "%Y")
-        filtered_dat <- filtered_dat %>%
-          filter(year(make_date(dt_time_year)) >= year(make_date(dt_range[1])) & 
-                   year(make_date(dt_time_year)) <= year(make_date(dt_range[2])))
-        frame_value <- filtered_dat$dt_time_year
-      } else{frame_value <- NULL}
-      
-      print(unique(filtered_dat$dt_time_year))
+      # if (input$all_years) {
+      #   print("all years")
+      #   frame_value <- global$data$dt_time
+      # } else if (length(input$month_range) == 1) {
+      #   dt_range <- format(input$month_range, "%m/%d/%Y")
+      #   filtered_dat <- filtered_dat %>%
+      #     filter(as.Date(dt_time, format = "%m/%d/%Y") == as.Date(dt_range[1], format = "%m/%d/%Y"))
+      #   filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      #   frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      # } else if (length(input$month_range) == 2) {
+      #   dt_range <- format(input$month_range, "%m/%d/%Y")
+      #   filtered_dat <- filtered_dat %>%
+      #     filter(as.Date(dt_time, format = "%m/%d/%Y") >= as.Date(dt_range[1], format = "%m/%d/%Y") & 
+      #              as.Date(dt_time, format = "%m/%d/%Y") <= as.Date(dt_range[2], format = "%m/%d/%Y"))
+      #   filtered_dat$dt_time <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      #   frame_value <- as.Date(filtered_dat$dt_time, format = "%m/%d/%Y")
+      # } else if (length(input$year_range) == 1) {
+      #   dt_range <- format(input$year_range, "%Y")
+      #   filtered_dat <- filtered_dat %>%
+      #     filter(year(make_date(dt_time_year)) == year(make_date(dt_range[1])))
+      #   frame_value <- filtered_dat$dt_time_year
+      # } else if (length(input$year_range) == 2) {
+      #   dt_range <- format(input$year_range, "%Y")
+      #   filtered_dat <- filtered_dat %>%
+      #     filter(year(make_date(dt_time_year)) >= year(make_date(dt_range[1])) & 
+      #              year(make_date(dt_time_year)) <= year(make_date(dt_range[2])))
+      #   frame_value <- filtered_dat$dt_time_year
+      # } else{frame_value <- NULL}
+      # 
+      # print(unique(filtered_dat$dt_time_year))
+      frame_value <- NULL
       
       
       print("identical")
