@@ -1,3 +1,4 @@
+options(expressions = 10000)
 
 logger::log_info('running global.R')
 #### Libraries ####
@@ -23,8 +24,6 @@ library(shinytreeview)
 library(shinyBS)
 library(readr)
 library(waiter)
-
-
 
 
 
@@ -344,6 +343,6 @@ generate_widget_filters <- function(data) {
 
 
 
-
+logger::log_info('global.rloaded')
 
 

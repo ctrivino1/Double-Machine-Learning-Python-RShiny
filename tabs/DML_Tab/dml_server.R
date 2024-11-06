@@ -4,7 +4,7 @@ source_python("./functions/dml.py")
 
 source_python("./functions/elastic_net_dim_reduction.py")
 
-
+logger::log_info('dml_server.r started')
 ####  Python dml function ####
 render_dml_tab <- 
   function(input, output,session) {
@@ -837,7 +837,7 @@ render_dml_tab <-
     })
     
     
-    
+    logger::log_info('dml_server.r finished')
     #### PPT Full Screen Capability #### look at dml_ui notes at bottom of script
     observeEvent(input$fullscreenBtn, {runjs("var elem = document.getElementById('slidesIframe'); if (!document.fullscreenElement) {elem.requestFullscreen(); } else {if (document.exitFullscreen) {document.exitFullscreen();}}")})
     waiter_hide()

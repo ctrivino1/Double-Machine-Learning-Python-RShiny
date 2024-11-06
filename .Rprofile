@@ -1,3 +1,4 @@
+source("renv/activate.R")
 
 env_name <- "my_python_env"
 

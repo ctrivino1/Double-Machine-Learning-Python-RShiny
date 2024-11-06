@@ -1,5 +1,5 @@
 source("./global.r")
-
+logger::log_info('dml_ui.r started')
 
 
 
@@ -607,7 +607,7 @@ DML_tab <- tabPanel(
   )
 )
 
-
+logger::log_info('dml.ui finished')
 
 #### Notes ####
 
